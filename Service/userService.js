@@ -58,3 +58,13 @@ export const registerDeliveryBoy = async ({ name, email, password, vehicleType, 
   await deliveryBoy.save();
   return { user, deliveryBoy };
 };
+
+export const isEmailRegistered = async (email) => {
+  if (!email) {
+    throw new Error('Email is required');
+  }
+
+  const existingUser = await User.findOne({ email });
+  return !!existingUser;
+};
+
