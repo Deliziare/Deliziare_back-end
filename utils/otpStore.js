@@ -34,3 +34,18 @@ export const getOtpData = (email) => {
   if (!record) return null;
   return { otp: record.otp, userData: record.userData };
 };
+
+
+export const markOTPVerified = (email) => {
+    const record = otpStore.get(email);
+    if (record) {
+      record.verified = true;
+      otpStore.set(email, record);
+    }
+  };
+  
+  export const isOTPVerified = (email) => {
+    const record = otpStore.get(email);
+    return record?.verified === true;
+  };
+  

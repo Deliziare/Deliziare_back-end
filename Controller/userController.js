@@ -3,10 +3,21 @@ import { registerChef, registerDeliveryBoy, registerHost } from '../Service/user
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 
 import { generateOTP } from '../utils/otp.js';
-import { saveOTP,verifyAndConsumeOTP } from '../utils/otpStore.js';
+import { saveOTP,verifyAndConsumeOTP,markOTPVerified } from '../utils/otpStore.js';
 import sendOTPEmail from '../utils/sendMail.js';
 
+import { isOTPVerified } from '../utils/otpStore.js';
+import User from '../Models/userModel.js';
+import bcrypt from 'bcryptjs';
+import otpTemplate from '../utils/emailTemplate/otpTemplate.js';
+
 export const chefRegister = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!isOTPVerified(email)) {
+    res.status(403);
+    throw new Error('OTP verification required before registration');
+  }
+
   const file = req.file;
   if (!file) {
     res.status(400);
@@ -14,7 +25,6 @@ export const chefRegister = asyncHandler(async (req, res) => {
   }
 
   const result = await uploadToCloudinary(file.buffer);
-
   const data = await registerChef({
     ...req.body,
     certificate: result.secure_url,
@@ -23,29 +33,44 @@ export const chefRegister = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Chef registered successfully', data });
 });
 
+
 export const deliveryBoyRegister = asyncHandler(async (req, res) => {
-  const { license, IDProof } = req.files;
-  if (!license || !IDProof) {
-    res.status(400);
-    throw new Error('License and ID Proof are required');
-  }
-
-  const licenseUrl = await uploadToCloudinary(license[0].buffer);
-  const IDProofUrl = await uploadToCloudinary(IDProof[0].buffer);
-
-  const data = await registerDeliveryBoy({
-    ...req.body,
-    license: licenseUrl.secure_url,
-    IDProof: IDProofUrl.secure_url,
+    const { email } = req.body;
+    if (!isOTPVerified(email)) {
+      res.status(403);
+      throw new Error('OTP verification required before registration');
+    }
+  
+    const { license, IDProof } = req.files;
+    if (!license || !IDProof) {
+      res.status(400);
+      throw new Error('License and ID Proof are required');
+    }
+  
+    const licenseUrl = await uploadToCloudinary(license[0].buffer);
+    const IDProofUrl = await uploadToCloudinary(IDProof[0].buffer);
+  
+    const data = await registerDeliveryBoy({
+      ...req.body,
+      license: licenseUrl.secure_url,
+      IDProof: IDProofUrl.secure_url,
+    });
+  
+    res.status(201).json({ message: 'Delivery boy registered successfully', data });
   });
-
-  res.status(201).json({ message: 'Delivery boy registered successfully', data });
-});
+  
 
 export const hostRegister = asyncHandler(async (req, res) => {
-  const data = await registerHost(req.body);
-  res.status(201).json({ message: 'Host registered successfully', data });
-});
+    const { email } = req.body;
+  
+    if (!isOTPVerified(email)) {
+      res.status(403);
+      throw new Error('OTP verification required before registration');
+    }
+  
+    const data = await registerHost(req.body);
+    res.status(201).json({ message: 'Host registered successfully', data });
+  });
 
 
 
@@ -62,17 +87,94 @@ export const sendOtp = async (req, res) => {
     await sendOTPEmail({
       to: email,
       subject: "Your OTP Code",
-      html: `<p>Your OTP is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`
+      html: otpTemplate(otp)
     });
   
     res.json({ message: "OTP sent successfully" });
   };
   
-  export const verifyOtp = async (req, res) => {
-    const { email, otp } = req.body;
-    const { valid, userData, reason } = verifyAndConsumeOTP(email, otp);
+
+
+
+  export const verifyOtp = asyncHandler(async (req, res) => {
+    try {
+      const { email, otp } = req.body;
   
-    if (!valid) return res.status(400).json({ message: reason });
+      const { valid, reason, userData } = (() => {
+        const result = verifyAndConsumeOTP(email, otp);
+        if (!result.valid) return { valid: false, reason: result.reason, userData: null };
+        return { valid: true, reason: null, userData: result.userData };
+      })();
   
-    res.status(200).json({ message: "OTP verified", userData });
-  };
+      if (!valid) return res.status(400).json({ message: reason });
+  
+      const name = req.body.name || userData?.name;
+      const password = req.body.password || userData?.password;
+      const phone = req.body.phone || userData?.phone;
+      const role = req.body.role || userData?.role || 'host';
+  
+      if (!name || !password || !phone) {
+        return res.status(400).json({ message: 'Missing registration fields' });
+      }
+  
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(409).json({ message: 'User already registered with this email' });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const newUser = new User({
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        role,
+      });
+  
+      await newUser.save();
+  
+      markOTPVerified(email);
+  
+      res.status(200).json({ message: 'OTP verified and user registered successfully.' });
+    } catch (error) {
+      console.error('Error in verifyOtp:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+
+
+  export const loginUser = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+  
+   
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+  
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+  
+   
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+  
+   
+    res.status(200).json({
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+      
+    });
+  });
+  
