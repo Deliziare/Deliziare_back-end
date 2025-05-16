@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import userRoutes from './Routes/userRoutes.js'
-
+import adminRoutes from './Routes/adminRoutes.js'
 dotenv.config();
 
 const app = express();
@@ -21,7 +21,7 @@ const corsOptions = {
 app.use(cors(corsOptions))
 
 app.use('/api/users',userRoutes)
-
+app.use('/api/admin', adminRoutes);
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });
