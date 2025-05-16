@@ -76,21 +76,32 @@ export const hostRegister = asyncHandler(async (req, res) => {
 
 
 
-export const sendOtp = async (req, res) => {
-    const { email, role, ...userData } = req.body;
-    if (!email || !role) return res.status(400).json({ message: 'Email and role required' });
+  export const sendOtp = async (req, res) => {
+    try {
+      console.log('Request body:', req.body); 
+      console.log('Request files:', req.files); 
   
-    const otp = generateOTP();
+      const { email, role, ...userData } = req.body;
+      if (!email || !role) {
+        return res.status(400).json({ message: 'Email and role required' });
+      }
   
-    saveOTP(email, otp, { role, ...userData });
+      const otp = generateOTP();
+      console.log('Generated OTP:', otp); 
   
-    await sendOTPEmail({
-      to: email,
-      subject: "Your OTP Code",
-      html: otpTemplate(otp)
-    });
+      saveOTP(email, otp, { role, ...userData });
   
-    res.json({ message: "OTP sent successfully" });
+      await sendOTPEmail({
+        to: email,
+        subject: "Your OTP Code",
+        html: otpTemplate(otp)
+      });
+  
+      res.json({ message: "OTP sent successfully" });
+    } catch (error) {
+      console.error('Error in sendOtp:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   };
   
 
@@ -176,5 +187,10 @@ export const sendOtp = async (req, res) => {
       },
       
     });
+  });
+  
+
+  export const logoutUser = asyncHandler(async (req, res) => {
+    res.status(200).json({ message: 'Logout successful' });
   });
   
