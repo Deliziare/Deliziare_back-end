@@ -1,5 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import { registerChef, registerDeliveryBoy, registerHost } from '../Service/userService.js';
+import { isEmailRegistered, registerChef, registerDeliveryBoy, registerHost } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP } from '../utils/otp.js';
@@ -193,6 +193,7 @@ export const sendOtp = async (req, res) => {
       
     });
   });
+
   export const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie('accessToken', {
     httpOnly: true,
@@ -222,3 +223,22 @@ export const sendOtp = async (req, res) => {
     return res.status(403).json({ message: 'Token invalid or expired' });
   }
 });
+
+  
+  export const checkEmailExists = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const exists = await isEmailRegistered(email);
+
+    if (exists) {
+      return res.status(200).json({ exists: true, message: 'Email already in use' });
+    }
+
+    return res.status(200).json({ exists: false, message: 'Email is available' });
+  } catch (error) {
+    console.error('Error checking email:', error.message);
+    return res.status(400).json({ error: error.message || 'Invalid request' });
+  }
+};
+
