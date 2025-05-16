@@ -9,7 +9,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['host', 'chef', 'admin', 'deliveryBoy'],
     required: true
-  }
+  },
+  isBlock:{type: Boolean,default:false}
+
 }, { timestamps: true });
 
 const User =  mongoose.model('User', userSchema);
