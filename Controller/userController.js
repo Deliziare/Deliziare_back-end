@@ -194,6 +194,7 @@ export const sendOtp = async (req, res) => {
     });
   });
 
+
   export const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie('accessToken', {
     httpOnly: true,
@@ -224,6 +225,7 @@ export const sendOtp = async (req, res) => {
   }
 });
 
+
   
   export const checkEmailExists = async (req, res) => {
   const { email } = req.body;
@@ -240,5 +242,6 @@ export const sendOtp = async (req, res) => {
     console.error('Error checking email:', error.message);
     return res.status(400).json({ error: error.message || 'Invalid request' });
   }
+
 };
 
