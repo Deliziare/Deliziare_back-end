@@ -1,7 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import { registerChef, registerDeliveryBoy, registerHost } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
-
+import jwt from 'jsonwebtoken';
 import { generateOTP } from '../utils/otp.js';
 import { saveOTP,verifyAndConsumeOTP,markOTPVerified } from '../utils/otpStore.js';
 import sendOTPEmail from '../utils/sendMail.js';
@@ -10,6 +10,7 @@ import { isOTPVerified } from '../utils/otpStore.js';
 import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
 import otpTemplate from '../utils/emailTemplate/otpTemplate.js';
+import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 
 export const chefRegister = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -163,7 +164,22 @@ export const sendOtp = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-  
+   const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, 
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
+  });
+
    
     res.status(200).json({
       message: 'Login successful',
@@ -177,4 +193,32 @@ export const sendOtp = async (req, res) => {
       
     });
   });
-  
+  export const logoutUser = asyncHandler(async (req, res) => {
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.status(200).json({ message: 'Logged out successfully' });
+});
+  export const getCurrentUser = asyncHandler(async (req, res) => {
+  const token = req.cookies.accessToken;
+  if (!token) return res.status(401).json({ message: 'Not authenticated' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json(user);
+  } catch (error) {
+    return res.status(403).json({ message: 'Token invalid or expired' });
+  }
+});

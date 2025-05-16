@@ -5,12 +5,14 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import userRoutes from './Routes/userRoutes.js'
 import adminRoutes from './Routes/adminRoutes.js'
+import cookieParser from 'cookie-parser';
+
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
-
+app.use(cookieParser());
 
 connectDB();
 const corsOptions = {
