@@ -7,12 +7,15 @@ import userRoutes from './Routes/userRoutes.js'
 import adminRoutes from './Routes/adminRoutes.js'
 import cookieParser from 'cookie-parser';
 import errorHandler from './middleware/errorHandler.js';
+
+
+
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
-
+app.use(cookieParser());
 
 connectDB();
 const corsOptions = {

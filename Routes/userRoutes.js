@@ -1,7 +1,11 @@
 import express from 'express';
-import { chefRegister, deliveryBoyRegister, hostRegister, loginUser, logoutUser, sendOtp ,verifyOtp} from '../Controller/userController.js';
+
+
+import { chefRegister, deliveryBoyRegister, getCurrentUser, hostRegister, loginUser, logoutUser, sendOtp ,verifyOtp} from '../Controller/userController.js';
+
 const router = express.Router();
 import upload from '../middleware/multer.js';
+import { checkEmailExists } from '../Controller/userController.js';
 
 router.post('/register/host',hostRegister)
 router.post('/register/chef',upload.single('certificate'),chefRegister)
@@ -14,5 +18,11 @@ router.post('/send-otp',upload.any(), sendOtp);
 router.post('/verify-otp', verifyOtp);
 router.post('/login',loginUser)
 router.post('/logout',logoutUser)
+
+router.get('/me',getCurrentUser)
+router.post('/logout', logoutUser);
+
+router.post('/check-email',checkEmailExists)
+
 
 export default router
