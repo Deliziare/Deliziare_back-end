@@ -27,23 +27,7 @@ export const registerHost = async ({ name, email, password, phone }) => {
   return { user };
 };
 
-export const registerChef = async ({ name, email, password,  experience, specialize,locationLat,locationLng, certificate }) => {
-  const user = await registerUser({ name, email, password, role: 'chef' });
 
-  const chef = new Chef({
-    userId: user._id,
-    location: {
-        lat: Number(locationLat),
-        lng: Number(locationLng),
-    },
-    experience,
-    specialize,
-    certificate,
-  });
-
-  await chef.save();
-  return { user, chef };
-};
 
 export const registerDeliveryBoy = async ({ name, email, password, vehicleType, license, IDProof }) => {
   const user = await registerUser({ name, email, password, role: 'deliveryBoy' });

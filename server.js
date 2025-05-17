@@ -6,6 +6,9 @@ import connectDB from './config/db.js';
 import userRoutes from './Routes/userRoutes.js'
 import adminRoutes from './Routes/adminRoutes.js'
 import cookieParser from 'cookie-parser';
+import errorHandler from './middleware/errorHandler.js';
+
+
 
 dotenv.config();
 
@@ -22,8 +25,13 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
+
+app.use(cookieParser())
 app.use('/api/users',userRoutes)
 app.use('/api/admin', adminRoutes);
+
+app.use(errorHandler)
+
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });
