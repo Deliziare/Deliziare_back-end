@@ -17,7 +17,6 @@ router.post('/login',loginUser)
 
 router.get('/me',getCurrentUser)
 router.post('/logout', logoutUser);
-=======
 
 router.post('/check-email',checkEmailExists)
 

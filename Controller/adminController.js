@@ -2,12 +2,16 @@ import Chef from "../Models/chefModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { fetchAllUsers } from "../Service/adminService.js";
 import { updateUserBlockStatus } from "../Service/adminService.js";
+import User from "../Models/userModel.js";
 
 export const getAllChefsForAdmin = asyncHandler(async (req, res) => {
   const chefs = await Chef.find().populate('userId');
 
-  const formattedChefs = chefs.map((chef) => ({
+const formattedChefs = chefs
+  .filter(chef => chef.userId) // Only include chefs with valid user reference
+  .map((chef) => ({
     id: chef._id,
+    userId:chef.userId._id,
     name: chef.userId.name,
     email: chef.userId.email,
     experience: chef.experience || "",
@@ -22,21 +26,24 @@ export const getAllChefsForAdmin = asyncHandler(async (req, res) => {
   res.status(200).json(formattedChefs);
 });
 
-export const handleTogleBlock=asyncHandler(async(req,res)=>{
- try {
-   
-    
-    const chef = await Chef.findById(req.params.id);
+export const handleTogleBlock = asyncHandler(async (req, res) => {
+  try {
+    const chef = await User.findById(req.params.id)
     if (!chef) return res.status(404).json({ message: 'Chef not found' });
 
-    chef.isBlocked = !chef.isBlocked;
+    chef.isBlock = !chef.isBlock;
+
+   
+
     await chef.save();
 
-    res.status(200).json({ isBlocked: chef.isBlocked });
+    res.status(200).json({ isBlocked: chef.isBlock });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err });
+    console.error("Toggle block error:", err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
-})
+});
+
 
 
 
@@ -51,7 +58,7 @@ export const getUsersByAdmin = async (req, res) => {
   }
 };
 
-import User from "../Models/userModel.js";
+
 
 export const toggleUserBlockStatus = async (req, res) => {
   try {

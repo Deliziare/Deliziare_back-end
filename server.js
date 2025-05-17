@@ -5,6 +5,7 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import userRoutes from './Routes/userRoutes.js'
 import adminRoutes from './Routes/adminRoutes.js'
+import chefRoutes from './Routes/chefRoutes.js'
 import cookieParser from 'cookie-parser';
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(cors(corsOptions))
 
 app.use('/api/users',userRoutes)
 app.use('/api/admin', adminRoutes);
+app.use('/api/chefs',chefRoutes)
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });

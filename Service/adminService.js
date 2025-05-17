@@ -2,7 +2,7 @@ import User from "../Models/userModel.js";
 
 export const fetchAllUsers = async () => {
   try {
-    const users = await User.find({role: 'host'}, '-__v'); // exclude __v
+    const users = await User.find({role: 'host'}, '-__v');
     return users;
   } catch (error) {
     throw new Error('Failed to fetch users');
