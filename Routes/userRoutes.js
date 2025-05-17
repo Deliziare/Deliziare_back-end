@@ -1,14 +1,14 @@
 import express from 'express';
 
 
-import { chefRegister, deliveryBoyRegister, getCurrentUser, hostRegister, loginUser, logoutUser, sendOtp ,verifyOtp} from '../Controller/userController.js';
+import { deliveryBoyRegister, getCurrentUser, loginUser, logoutUser, sendOtp ,verifyOtp} from '../Controller/userController.js';
 
 const router = express.Router();
 import upload from '../middleware/multer.js';
 import { checkEmailExists } from '../Controller/userController.js';
 
-router.post('/register/host',hostRegister)
-router.post('/register/chef',upload.single('certificate'),chefRegister)
+
+
 router.post('/register/deliveryboy', upload.fields([
     { name: 'license', maxCount: 1 },
     { name: 'IDProof', maxCount: 1 },

@@ -1,5 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import { isEmailRegistered, registerChef, registerDeliveryBoy, registerHost } from '../Service/userService.js';
+import { isEmailRegistered,  registerDeliveryBoy, registerHost } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP } from '../utils/otp.js';
@@ -11,28 +11,7 @@ import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
 import otpTemplate from '../utils/emailTemplate/otpTemplate.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
-
-export const chefRegister = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  if (!isOTPVerified(email)) {
-    res.status(403);
-    throw new Error('OTP verification required before registration');
-  }
-
-  const file = req.file;
-  if (!file) {
-    res.status(400);
-    throw new Error('Certificate file is required');
-  }
-
-  const result = await uploadToCloudinary(file.buffer);
-  const data = await registerChef({
-    ...req.body,
-    certificate: result.secure_url,
-  });
-
-  res.status(201).json({ message: 'Chef registered successfully', data });
-});
+import Chef from '../Models/chefModel.js';
 
 
 export const deliveryBoyRegister = asyncHandler(async (req, res) => {
@@ -61,17 +40,7 @@ export const deliveryBoyRegister = asyncHandler(async (req, res) => {
   });
   
 
-export const hostRegister = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-  
-    if (!isOTPVerified(email)) {
-      res.status(403);
-      throw new Error('OTP verification required before registration');
-    }
-  
-    const data = await registerHost(req.body);
-    res.status(201).json({ message: 'Host registered successfully', data });
-  });
+
 
 
 
@@ -105,55 +74,56 @@ export const hostRegister = asyncHandler(async (req, res) => {
     }
   };
   
+export const verifyOtp = asyncHandler(async (req, res) => {
+  try {
+    const { email, otp } = req.body;
 
+    const { valid, reason, userData } = (() => {
+      const result = verifyAndConsumeOTP(email, otp);
+      if (!result.valid) return { valid: false, reason: result.reason, userData: null };
+      return { valid: true, reason: null, userData: result.userData };
+    })();
 
+    if (!valid) return res.status(400).json({ message: reason });
 
-  export const verifyOtp = asyncHandler(async (req, res) => {
-    try {
-      const { email, otp } = req.body;
-  
-      const { valid, reason, userData } = (() => {
-        const result = verifyAndConsumeOTP(email, otp);
-        if (!result.valid) return { valid: false, reason: result.reason, userData: null };
-        return { valid: true, reason: null, userData: result.userData };
-      })();
-  
-      if (!valid) return res.status(400).json({ message: reason });
-  
-      const name = req.body.name || userData?.name;
-      const password = req.body.password || userData?.password;
-      const phone = req.body.phone || userData?.phone;
-      const role = req.body.role || userData?.role || 'host';
-  
-      if (!name || !password || !phone) {
-        return res.status(400).json({ message: 'Missing registration fields' });
-      }
-  
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(409).json({ message: 'User already registered with this email' });
-      }
-  
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      const newUser = new User({
-        name,
-        email,
-        phone,
-        password: hashedPassword,
-        role,
-      });
-  
-      await newUser.save();
-  
-      markOTPVerified(email);
-  
-      res.status(200).json({ message: 'OTP verified and user registered successfully.' });
-    } catch (error) {
-      console.error('Error in verifyOtp:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+    const name = req.body.name || userData?.name;
+    const password = req.body.password || userData?.password;
+    const phone = req.body.phone || userData?.phone;
+    const role = req.body.role || userData?.role || 'host';
+
+    if (!name || !password || !phone) {
+      return res.status(400).json({ message: 'Missing registration fields' });
     }
-  });
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: 'User already registered with this email' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ name, email, phone, password: hashedPassword, role });
+    await newUser.save();
+
+   
+    if (role === 'chef') {
+      const chef = new Chef({
+        userId: newUser._id,
+        experience: req.body.experience || userData?.experience,
+        specialize: req.body.specializations || userData?.specializations || [],
+        location: req.body.location || userData?.location || { lat: 0, lng: 0 },
+      });
+      await chef.save();
+    }
+
+    markOTPVerified(email);
+
+    res.status(200).json({ message: 'OTP verified and user registered successfully.' });
+  } catch (error) {
+    console.error('Error in verifyOtp:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
   export const loginUser = asyncHandler(async (req, res) => {
