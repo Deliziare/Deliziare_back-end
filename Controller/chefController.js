@@ -1,7 +1,7 @@
 import { getChefByUserId, updateChefProfileService } from "../Service/chefService.js";
 
 export const getLoggedInChef = async (req, res) => {
-  const userId = req.user.id || req.user.userId; // Clerk or JWT
+  const userId = req.user.id || req.user.userId; 
   const chef = await getChefByUserId(userId);
 
   if (!chef) {
