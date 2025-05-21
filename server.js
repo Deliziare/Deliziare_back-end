@@ -7,6 +7,7 @@ import userRoutes from './Routes/userRoutes.js'
 import adminRoutes from './Routes/adminRoutes.js'
 import postRoutes from './Routes/postRoutes.js'
 import chefRoutes from './Routes/chefRoutes.js'
+import userClient from './Routes/userClientRoute.js'
 import cookieParser from 'cookie-parser';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -34,7 +35,7 @@ app.use('/api/admin', adminRoutes);
 
 app.use('/api/chefs',chefRoutes)
 app.use('/api/posts', postRoutes);
-
+app.use('/api/userclient',userClient)
 app.use(errorHandler)
 
 app.listen(5000, () => {
