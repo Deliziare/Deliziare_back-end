@@ -10,7 +10,11 @@ const userSchema = new mongoose.Schema({
     enum: ['host', 'chef', 'admin', 'deliveryBoy'],
     required: true
   },
-  isBlock:{type: Boolean,default:false}
+  isBlock:{type: Boolean,default:false},
+  isProfileCompleted: {
+      type: Boolean,
+      default: false,
+    },
 
 }, { timestamps: true });
 
