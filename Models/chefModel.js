@@ -30,6 +30,10 @@ const chefSchema = new mongoose.Schema({
       facebook: { type: String },
       linkedin: { type: String },
     },
+    //  isProfileCompleted: {
+    //   type: Boolean,
+    //   default: false,
+    // },
  
   }, { timestamps: true });
   
