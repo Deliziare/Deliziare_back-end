@@ -7,8 +7,8 @@ const deliveryBoySchema = new mongoose.Schema({
     required: true
   },
   vehicleType: String,
+  IDProof:String,
   license:String,
-  IDProof:String
   
 }, { timestamps: true });
 

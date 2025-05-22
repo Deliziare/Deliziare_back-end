@@ -1,11 +1,13 @@
 const otpStore = new Map();
 
-export const saveOTP = (email, otp, userData) => {
+export const saveOTP = (email, otp, userData = null) => {
   console.log('Saving OTP:', otp, 'for', email);
+
+  const previous = otpStore.get(email);
 
   otpStore.set(email, {
     otp,
-    userData,
+    userData: userData ?? previous?.userData, 
     expiresAt: Date.now() + 5 * 60 * 1000, 
   });
 };
