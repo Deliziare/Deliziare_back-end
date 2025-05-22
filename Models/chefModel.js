@@ -19,6 +19,22 @@ const chefSchema = new mongoose.Schema({
     experience: String,
     specialize: [String],
     certificate: String,
+    district:String,
+    bio: {
+      type: String,
+    },
+    qualifications: [String],
+    socialLinks: {
+      instagram: { type: String },
+      youtube: { type: String },
+      facebook: { type: String },
+      linkedin: { type: String },
+    },
+    //  isProfileCompleted: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+ 
   }, { timestamps: true });
   
   const Chef = mongoose.model('Chef', chefSchema);
