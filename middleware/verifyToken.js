@@ -6,6 +6,7 @@ export const verifyToken = (req, res, next) => {
   if (!token) return res.status(401).json({ message: 'Access Denied. No token.' });
 
   try {
+
     const decoded = verifyTokens(token, process.env.ACCESS_TOKEN_SECRET);
     req.user = decoded; 
 
