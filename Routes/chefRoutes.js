@@ -8,7 +8,6 @@ const router=express.Router()
 router.get('/chefData',verifyToken,getLoggedInChef)
 router.put('/update-profile',verifyToken,updateChefProfile)
 router.get('/user-posts', verifyToken, getPostsForChefDistrict);
-
 router.get('/user-posts/:id',verifyToken,viewPostDetail );
 
 export default router

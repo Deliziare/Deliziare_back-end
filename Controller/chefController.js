@@ -36,10 +36,6 @@ export const updateChefProfile = async (req, res) => {
 };
 
 
-// view post
-
-
-
 export const getPostsForChefDistrict = async (req, res) => {
   try {
     const userId = req.user.id; 
