@@ -17,3 +17,12 @@ export const generateRefreshToken = (user) => {
     { expiresIn: '7d' }
   );
 };
+
+
+export const verifyTokens = (token, secret) => {
+  try {
+    return jwt.verify(token, secret);
+  } catch (error) {
+    throw new CustomError('Invalid or expired token', 403);
+  }
+};

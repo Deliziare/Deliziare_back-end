@@ -2,125 +2,45 @@ import asyncHandler from '../utils/asyncHandler.js';
 import {  isEmailRegistered,  registerDeliveryBoy, registerHost } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
-import { generateOTP } from '../utils/otp.js';
-import { saveOTP,verifyAndConsumeOTP,markOTPVerified } from '../utils/otpStore.js';
-import sendOTPEmail from '../utils/sendMail.js';
-
-import { isOTPVerified } from '../utils/otpStore.js';
+import { sendOtpService ,verifyOtpService,forgotPasswordService,resetPasswordService,verifyPasswordOtpService,resendOtpService} from '../Service/userService.js';
 import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
-import otpTemplate from '../utils/emailTemplate/otpTemplate.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
-import Chef from '../Models/chefModel.js';
-
-
-export const deliveryBoyRegister = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    if (!isOTPVerified(email)) {
-      res.status(403);
-      throw new Error('OTP verification required before registration');
-    }
-  
-    const { license, IDProof } = req.files;
-    if (!license || !IDProof) {
-      res.status(400);
-      throw new Error('License and ID Proof are required');
-    }
-  
-    const licenseUrl = await uploadToCloudinary(license[0].buffer);
-    const IDProofUrl = await uploadToCloudinary(IDProof[0].buffer);
-  
-    const data = await registerDeliveryBoy({
-      ...req.body,
-      license: licenseUrl.secure_url,
-      IDProof: IDProofUrl.secure_url,
-    });
-  
-    res.status(201).json({ message: 'Delivery boy registered successfully', data });
-  });
-  
+import { sendTokensAsCookies } from '../utils/tokenHandler.js';
 
 
 
-
-
-
-
-  export const sendOtp = async (req, res) => {
-    try {
-      console.log('Request body:', req.body); 
-      console.log('Request files:', req.files); 
-  
-      const { email, role, ...userData } = req.body;
-      if (!email || !role) {
-        return res.status(400).json({ message: 'Email and role required' });
-      }
-  
-      const otp = generateOTP();
-      console.log('Generated OTP:', otp); 
-  
-      saveOTP(email, otp, { role, ...userData });
-  
-      await sendOTPEmail({
-        to: email,
-        subject: "Your OTP Code",
-        html: otpTemplate(otp)
-      });
-  
-      res.json({ message: "OTP sent successfully" });
-    } catch (error) {
-      console.error('Error in sendOtp:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
-    }
-  };
-  
-export const verifyOtp = asyncHandler(async (req, res) => {
+export const sendOtpController = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files);
 
-    const { valid, reason, userData } = (() => {
-      const result = verifyAndConsumeOTP(email, otp);
-      if (!result.valid) return { valid: false, reason: result.reason, userData: null };
-      return { valid: true, reason: null, userData: result.userData };
-    })();
-
-    if (!valid) return res.status(400).json({ message: reason });
-
-    const name = req.body.name || userData?.name;
-    const password = req.body.password || userData?.password;
-    const phone = req.body.phone || userData?.phone;
-    const role = req.body.role || userData?.role || 'host';
-
-    if (!name || !password || !phone) {
-      return res.status(400).json({ message: 'Missing registration fields' });
+    const { email, role, ...userData } = req.body;
+    if (!email || !role) {
+      return res.status(400).json({ message: 'Email and role required' });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: 'User already registered with this email' });
+    await sendOtpService(email, role, userData);
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error('Error in sendOtpController:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+  
+
+export const verifyOtpController = asyncHandler(async (req, res) => {
+  try {
+    const result = await verifyOtpService(req);
+
+    if (!result.success) {
+      return res.status(result.status || 400).json({ message: result.message });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({ name, email, phone, password: hashedPassword, role });
-    await newUser.save();
-
-   
-    if (role === 'chef') {
-      const chef = new Chef({
-        userId: newUser._id,
-        experience: req.body.experience || userData?.experience,
-        specialize: req.body.specializations || userData?.specializations || [],
-        location: req.body.location || userData?.location || { lat: 0, lng: 0 },
-      });
-      await chef.save();
-    }
-
-    markOTPVerified(email);
 
     res.status(200).json({ message: 'OTP verified and user registered successfully.' });
   } catch (error) {
-    console.error('Error in verifyOtp:', error);
+    console.error('Error in verifyOtpController:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
@@ -147,19 +67,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
     }
    const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-  res.cookie('accessToken', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 15 * 60 * 1000, 
-  });
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, 
-  });
+  sendTokensAsCookies(res,accessToken,refreshToken)
 
    
     res.status(200).json({
@@ -174,6 +82,36 @@ export const verifyOtp = asyncHandler(async (req, res) => {
       
     });
   });
+
+
+
+  export const refreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) throw new CustomError("Refresh token missing", 401);
+  
+    const { newAccessToken } = await refreshAccessTokenService(refreshToken);
+  
+    const isProd = process.env.NODE_ENV === 'production';
+  
+    res
+    .cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "None" : "Lax",
+      maxAge: 15 * 60 * 1000,
+      path:'/'
+    })
+    .status(200)
+    .json({
+      status: STATUS.SUCCESS,
+      message: "Access token refreshed",
+      
+    });
+  
+  });
+
+
+
 
 
   export const logoutUser = asyncHandler(async (req, res) => {
@@ -198,6 +136,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decoded.id).select('-password');
+    
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json(user);
@@ -229,4 +168,85 @@ export const verifyOtp = asyncHandler(async (req, res) => {
 
 
 
-  
+export const forgotPasswordController = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  const result = await forgotPasswordService(email);
+
+  if (!result.success) {
+    return res.status(400).json({ message: result.message });
+  }
+
+  res.status(200).json({ message: result.message });
+});
+
+
+export const verifyPasswordOtpController = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: 'Email and OTP are required' });
+  }
+
+  const result = verifyPasswordOtpService(email, otp);
+
+  if (!result.success) {
+    return res.status(400).json({ message: result.message });
+  }
+
+  res.status(200).json({ message: 'OTP verified', tempToken: result.tempToken });
+});
+
+
+
+
+export const resetPasswordController = asyncHandler(async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization token required' });
+    }
+
+    const result = await resetPasswordService(token, newPassword);
+
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    res.status(200).json({ 
+      message: 'Password reset successfully',
+      user: result.user
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Failed to reset password' });
+  }
+});  
+
+
+export const resendOtpController = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    const result = await resendOtpService(email);
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error('Error in resendOtpController:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
