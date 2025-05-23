@@ -1,4 +1,5 @@
 import User from "../Models/userModel.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import { updateUserProfileValidation } from "../validation/updateUserProfileValidation.js";
 
 export const updateUserProfile = async (req, res) => {
@@ -50,5 +51,29 @@ export const updateUserProfile = async (req, res) => {
       
       errors: error.errors ? Object.values(error.errors).map(e => e.message) : undefined
     });
+  }
+};
+
+export const uploadProfileImage = async (req, res) => {
+  try {
+ 
+    const userId = req.user.id; 
+      if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const buffer = req.file.buffer;
+
+    const result = await uploadToCloudinary(buffer, {
+      folder: 'user_profiles',
+      resource_type: 'image',
+    });
+
+   
+    await User.findByIdAndUpdate(userId, { profileImage: result.secure_url });
+
+    res.status(200).json({ imageUrl: result.secure_url });
+  } catch (error) {
+    console.error('Profile Upload Error:', error);
+    res.status(500).json({ error: 'Image upload failed' });
   }
 };

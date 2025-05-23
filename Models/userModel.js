@@ -5,18 +5,24 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
   phone:Number,
-  profilePic: {
-    type: String, 
-    default: '',
-  },
+
+  profileImage:String,
+
   role: {
     type: String,
     enum: ['host', 'chef', 'admin', 'deliveryBoy'],
     required: true
   },
   isBlock:{type: Boolean,default:false},
-  isGoogleUser: { type: Boolean, default: false }
+
+  isGoogleUser: { type: Boolean, default: false },
   
+
+  isProfileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+
 
 }, { timestamps: true });
 
