@@ -12,14 +12,20 @@ import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { generateAccessToken, verifyTokens } from '../utils/generateToken.js';
 
+
 export const sendOtpService = async (email, role, userData) => {
   const otp = generateOTP();
   console.log('Generated OTP:', otp);
 
- 
-  saveOTP(email, otp, { role, ...userData });
-
   
+  const otpData = { 
+    role, 
+    ...userData,
+    location: userData.location || { lat: 0, lng: 0 }
+  };
+
+  saveOTP(email, otp, otpData);
+
   await sendOTPEmail({
     to: email,
     subject: "Your OTP Code",
@@ -66,12 +72,18 @@ export const verifyOtpService = async (req) => {
       const uploadResult = await uploadToCloudinary(req.files.certificate[0].buffer);
       certificateUrl = uploadResult.secure_url;
     }
-
+    const location = req.body.location || 
+                    (userData?.locationLat && userData?.locationLng 
+                      ? { 
+                          lat: parseFloat(userData.locationLat),
+                          lng: parseFloat(userData.locationLng) 
+                        }
+                      : { lat: 0, lng: 0 });
     const chef = new Chef({
       userId: newUser._id,
       experience: req.body.experience || userData?.experience,
       specialize: req.body.specializations || userData?.specializations || [],
-      location: req.body.location || userData?.location || { lat: 0, lng: 0 },
+      location,
       certificate: certificateUrl,
     });
     await chef.save();
