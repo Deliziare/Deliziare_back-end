@@ -25,4 +25,5 @@ router.post('/logout', logoutUser);
 router.post('/check-email',checkEmailExists)
 
 
+
 export default router

@@ -1,5 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import { isEmailRegistered,  registerDeliveryBoy, registerHost } from '../Service/userService.js';
+import {  isEmailRegistered,  registerDeliveryBoy, registerHost } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP } from '../utils/otp.js';
@@ -225,6 +225,8 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   }
 
 };
+
+
 
 
   

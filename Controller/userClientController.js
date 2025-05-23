@@ -1,3 +1,4 @@
+import Chef from "../Models/chefModel.js";
 import User from "../Models/userModel.js";
 import { updateUserProfileValidation } from "../validation/updateUserProfileValidation.js";
 
@@ -28,3 +29,13 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+
+export const getAllChefs=async(req,res)=>{
+  try{
+    const chefs=await Chef.find().populate('userId','name email');
+    res.status(200).json(chefs)
+  }catch(error){
+    res.status(500).json({message:'Failed to fetch chefs',error})
+  }
+}
