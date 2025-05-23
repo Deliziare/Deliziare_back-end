@@ -1,11 +1,8 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyToken.js';
-<<<<<<< HEAD
-import { getAllChefs, updateUserProfile } from '../Controller/userClientController.js';
-=======
+import { getAllChefs } from '../Controller/userClientController.js';
 import { updateUserProfile, uploadProfileImage } from '../Controller/userClientController.js';
 import upload from '../middleware/multer.js';
->>>>>>> upstream/dev
 
 const router = express.Router();
 

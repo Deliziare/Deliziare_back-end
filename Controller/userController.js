@@ -1,5 +1,5 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import {  isEmailRegistered,  registerDeliveryBoy, registerHost } from '../Service/userService.js';
+import {  isEmailRegistered } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { sendOtpService ,verifyOtpService,forgotPasswordService,resetPasswordService,verifyPasswordOtpService,resendOtpService} from '../Service/userService.js';

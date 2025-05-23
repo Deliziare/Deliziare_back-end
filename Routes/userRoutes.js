@@ -6,6 +6,7 @@ import {  getCurrentUser, loginUser, logoutUser, sendOtpController ,verifyOtpCon
 const router = express.Router();
 import upload from '../middleware/multer.js';
 import { checkEmailExists } from '../Controller/userController.js';
+import { googleLogin } from '../Controller/googleController.js';
 
 
 router.post('/send-otp',upload.any(), sendOtpController);
@@ -28,7 +29,7 @@ router.post('/forgot-password',forgotPasswordController)
 router.post('/reset-password',resetPasswordController)
 router.post('/verify-password-otp',verifyPasswordOtpController)
 router.post('/resend-otp',resendOtpController)
-
+router.post('/google',googleLogin)
 
 
 
