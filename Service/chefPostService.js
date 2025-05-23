@@ -5,7 +5,6 @@ export const createChefPost = async ({ chefId, title, description, images, tags 
   const uploadedImages = [];
 
   for (const img of images) {
-    // Use your helper that uploads a buffer and returns upload result
     const result = await uploadToCloudinary(img.data, {
       folder: 'chefPosts',
       resource_type: 'image',
@@ -14,7 +13,7 @@ export const createChefPost = async ({ chefId, title, description, images, tags 
     console.log('Cloudinary upload result:', result);
 
     uploadedImages.push({
-      url: result.secure_url,   // this will now be defined
+      url: result.secure_url,  
       altText: img.altText || '',
     });
   }
@@ -34,6 +33,30 @@ export const createChefPost = async ({ chefId, title, description, images, tags 
 
 
 export const getPostsByChefId = async (chefId) => {
-  const posts = await ChefPost.find({ chefId }).sort({ createdAt: -1 }); // newest first
+  const posts = await ChefPost.find({ chefId }).sort({ createdAt: -1 }); 
   return posts;
+};
+
+
+
+export const updateChefPostById = async (chefId, postId, updateData) => {
+  const updateFields = {
+    ...(updateData.title && { title: updateData.title }),
+    ...(updateData.description && { description: updateData.description }),
+    ...(updateData.tags && { tags: updateData.tags }),
+    ...(updateData.images && { images: updateData.images }),
+  };
+
+  const updatedPost = await ChefPost.findOneAndUpdate(
+    { _id: postId, chefId },
+    { $set: updateFields },
+    { new: true }
+  );
+
+  return updatedPost;
+};
+
+export const deleteChefPostById = async (chefId, postId) => {
+  const result = await ChefPost.findOneAndDelete({ _id: postId, chefId });
+  return result;
 };

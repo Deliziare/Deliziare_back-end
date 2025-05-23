@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const bidSchema = new mongoose.Schema({
     postId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
-    chefId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Chef', required: true },
+    chefId:{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     bidAmount:{type:Number,required:true},
       status: {
     type: String,
