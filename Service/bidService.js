@@ -11,7 +11,13 @@ export const createBid = async ({ postId, chefId, bidAmount }) => {
 };
 
 export const getBidsForPost = async (postId) => {
-  return await Bid.find({ postId }).populate('chefId', 'name email').sort({ createdAt: -1 });
+try {
+  let Bids = await Bid.find({ postId }).populate('chefId') 
+  return Bids
+} catch (error) {
+  console.log(error)
+}
+
 };
 
 export const getChefBids = async (chefId) => {
