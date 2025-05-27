@@ -1,62 +1,70 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../Models/userModel.js';
+import Chef from '../Models/chefModel.js';
 import { OAuth2Client } from "google-auth-library";
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 import { sendTokensAsCookies } from '../utils/tokenHandler.js';
-
-
+import DeliveryBoy from '../Models/deliveryboyModel.js';
 
 export const googleLogin = asyncHandler(async (req, res) => {
   try {
-    console.log('Starting Google login process...');
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    const body = req.body;
+    const { credential, role } = req.body;
 
-    if (!body?.credential) {
-      throw new AppError('No Google credentials provided!', 400);
-    }
+    if (!credential) throw new AppError('No Google credentials provided!', 400);
 
-    console.log('Verifying Google token...');
     const ticket = await client.verifyIdToken({
-      idToken: body.credential,
+      idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
     const { email, name, picture } = payload;
-    console.log('Google payload received:', { email, name });
 
     let user = await User.findOne({ email });
-    console.log('User lookup result:', user);
+    const userRole = ['host', 'chef', 'deliveryBoy'].includes(role) ? role : 'host';
+
+    if (user && user.role !== userRole) {
+      return res.status(400).json({
+        status: false,
+        message: `This email is already registered as a ${user.role}`,
+      });
+    }
 
     if (!user) {
-      console.log('Creating new user for Google login...');
-      const newUserData = {
+      // Create user
+      user = await User.create({
         name,
         email,
-        role: 'host',
-        profilePic: picture,
-        isBlock: false,
+        role: userRole,
+        profileImage: picture,
         isGoogleUser: true
-      };
-      console.log('User data to create:', newUserData);
-      
-      user = await User.create(newUserData);
-     
-      console.log('User created successfully:', user);
-    } else if (user.isBlock) {
-      console.log('Blocked user attempt:', email);
-      return res.status(403).json({
-        status: false,
-        message: 'User is blocked. Contact support.',
       });
+
+      // Create chef profile if role is chef
+      if (userRole === 'chef') {
+        await Chef.create({
+          userId: user._id,
+          phone:'Unknown',
+          location: { lat: 0, lng: 0 }, // Default location
+          district: 'Unknown', // Default district
+          experience: 'Not specified' // Default experience
+        });
+      }
+
+      if(userRole === 'deliveryBoy'){
+        await DeliveryBoy.create({
+          userId: user._id,
+          phone:'Unknown',
+          
+        });
+      }
     }
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    sendTokensAsCookies(res,accessToken,refreshToken)
+    sendTokensAsCookies(res, accessToken, refreshToken);
 
-    console.log('Login successful for user:', user.email);
     res.status(200).json({
       status: true,
       message: 'Successfully logged in',
@@ -65,17 +73,17 @@ export const googleLogin = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profilePic: user.profilePic,
+        profilePic: user.profileImage,
         isGoogleUser: user.isGoogleUser
       },
     });
+
   } catch (error) {
     console.error('Google login error:', error);
     res.status(500).json({
       status: false,
-      message: 'Error occurred during Google login',
-      errorMessage: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: 'Error during Google login',
+      error: error.message
     });
   }
 });

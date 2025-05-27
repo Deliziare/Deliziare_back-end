@@ -2,8 +2,9 @@ import express from 'express'
 import {  getLoggedInChef, getPostsForChefDistrict, updateChefProfile, viewPostDetail } from '../Controller/chefController.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 import Post from '../Models/postModel.js'
-import { createPost, deletePost, getMyChefPosts, updatePost } from '../Controller/chefPostController.js'
+import { createPost, deletePost, getAllPosts, getMyChefPosts, updatePost } from '../Controller/chefPostController.js'
 import upload from '../middleware/multer.js'
+
 
 const router=express.Router()
 
@@ -15,5 +16,6 @@ router.post('/chef-post',verifyToken,upload.array('images'),createPost)
 router.get('/getPost',verifyToken,getMyChefPosts)
 router.put('/updatePost/:id',verifyToken,upload.array('images'),updatePost)
 router.delete('deletePost/:id',verifyToken,deletePost)
+router.get('/all',verifyToken,getAllPosts)
 
 export default router

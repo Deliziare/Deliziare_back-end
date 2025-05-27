@@ -7,7 +7,14 @@ export const createBid = async ({ postId, chefId, bidAmount }) => {
   }
 
   const newBid = new Bid({ postId, chefId, bidAmount });
-  return await newBid.save();
+  const savedBid = await newBid.save();
+
+ 
+  await Post.findByIdAndUpdate(postId, {
+    $push: { bids: { chefId, amount: bidAmount } }
+  });
+
+  return savedBid;
 };
 
 export const getBidsForPost = async (postId) => {
