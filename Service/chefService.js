@@ -14,7 +14,6 @@ export const getChefByUserId = async (userId) => {
       if (user?.role === 'chef') {
         chef = await Chef.create({
           userId: user._id,
-          profilePhoto: user.profileImage || '',
           location: { lat: 0, lng: 0 },
           district: 'Unknown',
           experience: 'Not specified'
@@ -36,6 +35,7 @@ export const updateChefProfileService = async (chefId, data) => {
     specialize,
     qualifications,
     experience,
+    certificate,
     district,
     instagram,
     youtube,
@@ -50,6 +50,7 @@ export const updateChefProfileService = async (chefId, data) => {
       specialize,
       qualifications,
       experience,
+      certificate,
       district,
       socialLinks: {
         instagram,
@@ -57,7 +58,7 @@ export const updateChefProfileService = async (chefId, data) => {
         facebook,
         linkedin,
       },
-      
+        $addToSet: { certificate: { $each: certificate|| [] } }, 
     },
     { new: true, upsert: true } 
   );
