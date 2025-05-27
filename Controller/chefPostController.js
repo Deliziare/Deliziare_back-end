@@ -1,4 +1,4 @@
-import { createChefPost, deleteChefPostById, getPostsByChefId, updateChefPostById } from "../Service/chefPostService.js";
+import { createChefPost, deleteChefPostById, getPostsByChefId, updateChefPostById ,getAllChefPosts} from "../Service/chefPostService.js";
 
 export const createPost = async (req, res) => {
   try {
@@ -88,6 +88,17 @@ export const deletePost = async (req, res) => {
     res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {
     console.error("Error deleting chef post:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await getAllChefPosts();
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error("Error fetching all chef posts:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

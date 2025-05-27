@@ -60,3 +60,7 @@ export const deleteChefPostById = async (chefId, postId) => {
   const result = await ChefPost.findOneAndDelete({ _id: postId, chefId });
   return result;
 };
+
+export const getAllChefPosts = async () => {
+  return await ChefPost.find().populate('chefId', 'name');
+};
