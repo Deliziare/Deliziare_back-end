@@ -7,11 +7,24 @@ export const createBid = async ({ postId, chefId, bidAmount }) => {
   }
 
   const newBid = new Bid({ postId, chefId, bidAmount });
-  return await newBid.save();
+  const savedBid = await newBid.save();
+
+ 
+  await Post.findByIdAndUpdate(postId, {
+    $push: { bids: { chefId, amount: bidAmount } }
+  });
+
+  return savedBid;
 };
 
 export const getBidsForPost = async (postId) => {
-  return await Bid.find({ postId }).populate('chefId', 'name email').sort({ createdAt: -1 });
+try {
+  let Bids = await Bid.find({ postId }).populate('chefId') 
+  return Bids
+} catch (error) {
+  console.log(error)
+}
+
 };
 
 export const getChefBids = async (chefId) => {

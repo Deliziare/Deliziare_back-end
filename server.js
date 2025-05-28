@@ -11,7 +11,7 @@ import userClient from './Routes/userClientRoute.js'
 import cookieParser from 'cookie-parser';
 import errorHandler from './middleware/errorHandler.js';
 import bidRoutes from './Routes/bidRoutes.js'
-
+import uploadRoutes from './Routes/fileUploadRoutes.js'
 
 dotenv.config();
 
@@ -37,6 +37,7 @@ app.use('/api/chefs',chefRoutes)
 app.use('/api/posts', postRoutes);
 app.use('/api/userclient',userClient)
 app.use('/api/bids',bidRoutes)
+app.use('/api/certificates',uploadRoutes)
 app.use(errorHandler)
 
 app.listen(5000, () => {

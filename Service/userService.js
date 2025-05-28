@@ -12,6 +12,7 @@ import { markOTPVerified } from '../utils/otpStore.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { generateAccessToken, verifyTokens } from '../utils/generateToken.js';
+import CustomError from '../utils/CustomError.js';
 
 
 export const sendOtpService = async (email, role, userData) => {
@@ -146,7 +147,13 @@ export const refreshAccessTokenService = async (refreshToken) => {
     throw new CustomError("Refresh token missing", 401);
   }
 
-  const decoded = verifyTokens(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  let decoded;
+  try {
+    decoded = verifyTokens(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    throw new CustomError("Invalid or expired refresh token", 403);
+  }
+
   if (!decoded) {
     throw new CustomError("Invalid or expired refresh token", 403);
   }
@@ -159,6 +166,7 @@ export const refreshAccessTokenService = async (refreshToken) => {
   const newAccessToken = generateAccessToken(user);
   return { newAccessToken };
 };
+
 
 export const forgotPasswordService = async (email) => {
   try {

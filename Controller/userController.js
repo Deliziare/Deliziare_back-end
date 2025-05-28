@@ -2,7 +2,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import {  isEmailRegistered } from '../Service/userService.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
-import { sendOtpService ,verifyOtpService,forgotPasswordService,resetPasswordService,verifyPasswordOtpService,resendOtpService} from '../Service/userService.js';
+import { sendOtpService ,verifyOtpService,forgotPasswordService,resetPasswordService,verifyPasswordOtpService,resendOtpService,refreshAccessTokenService} from '../Service/userService.js';
 import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
@@ -118,7 +118,8 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
   res.clearCookie('accessToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    path: '/'
   });
 
   res.clearCookie('refreshToken', {
@@ -141,7 +142,7 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    return res.status(403).json({ message: 'Token invalid or expired' });
+    return res.status(401).json({ message: 'Token invalid or expired' });
   }
 });
 
@@ -248,5 +249,26 @@ export const resendOtpController = asyncHandler(async (req, res) => {
     console.error('Error in resendOtpController:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
+});
+
+
+
+export const checkIfGoogleUser = asyncHandler(async (req, res) => {
+  const { email} = req.body;
+  if (!email ) {
+    return res.status(400).json({ success: false, message: 'Email and role are required' });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  return res.status(200).json({ 
+    success: true, 
+    isGoogleUser: user.isGoogleUser || false,
+    role: user.role || 'host' 
+  });
+  
 });
 

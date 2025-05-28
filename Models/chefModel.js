@@ -24,12 +24,11 @@ const chefSchema = new mongoose.Schema({
       type: String,
     },
     qualifications: [String],
-    socialLinks: {
-      instagram: { type: String },
-      youtube: { type: String },
-      facebook: { type: String },
-      linkedin: { type: String },
-    },
+    profilePhoto: {
+      type: String, 
+      default: '',  
+    }
+    
     //  isProfileCompleted: {
     //   type: Boolean,
     //   default: false,
