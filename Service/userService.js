@@ -68,6 +68,15 @@ export const verifyOtpService = async (req) => {
   
   if (role === 'chef') {
     let certificateUrl = null;
+    let specializations = req.body.specializations || userData?.specializations || [];
+
+if (typeof specializations === 'string') {
+  try {
+    specializations = JSON.parse(specializations);
+  } catch (err) {
+    specializations = [];
+  }
+}
 
     if (req.files?.certificate?.[0]) {
       const uploadResult = await uploadToCloudinary(req.files.certificate[0].buffer);
@@ -83,7 +92,7 @@ export const verifyOtpService = async (req) => {
     const chef = new Chef({
       userId: newUser._id,
       experience: req.body.experience || userData?.experience,
-      specialize: req.body.specializations || userData?.specializations || [],
+      specialize: specializations,
       location,
       certificate: certificateUrl,
     });

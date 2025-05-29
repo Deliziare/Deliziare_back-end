@@ -23,6 +23,8 @@ const userSchema = new mongoose.Schema({
       default: false,
     },
 
+    hasPassword: { type: Boolean, default: false },
+
 
 }, { timestamps: true });
 

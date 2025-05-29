@@ -1,18 +1,19 @@
 import jwt from 'jsonwebtoken';
+import CustomError from './CustomError.js';
 
 
 export const generateAccessToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: user.role,email:user.email },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '50m' }
   );
 };
 
 
 export const generateRefreshToken = (user) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: user.role,email:user.email },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' }
   );
