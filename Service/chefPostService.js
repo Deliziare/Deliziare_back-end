@@ -62,5 +62,5 @@ export const deleteChefPostById = async (chefId, postId) => {
 };
 
 export const getAllChefPosts = async () => {
-  return await ChefPost.find().populate('chefId', 'name');
+  return await ChefPost.find().populate('chefId', 'name profileImage');
 };

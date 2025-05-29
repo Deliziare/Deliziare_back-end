@@ -6,9 +6,10 @@ const bidSchema = new mongoose.Schema({
     bidAmount:{type:Number,required:true},
       status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    enum: ['pending', 'accepted', 'rejected','completed'],
     default: 'pending'
   },
+  description:{type:String}
     }, { timestamps: true });
   
   const Bid = mongoose.model('Bid', bidSchema);

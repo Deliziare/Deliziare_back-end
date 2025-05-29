@@ -23,8 +23,11 @@ const postSchema = new mongoose.Schema({
   menu: [{ type: String, required: true }],
   description: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
-
-  
+  status: {
+    type: String,
+    enum: ['pending', 'accepted'],
+    default: 'pending'
+  },
   bids: [bidSchema]
 });
 
