@@ -2,6 +2,7 @@ import Bid from "../Models/bidModel.js";
 import Posts from "../Models/postModel.js";
 import Chef from '../Models/chefModel.js'
 import { createBid, getBidsForPost, getChefBids } from "../Service/bidService.js";
+import { creditWallet } from "../Service/walletService.js";
 
 export const createBidController = async (req, res) => {
   try {
@@ -77,23 +78,33 @@ export const AcceptBid=async (req,res)=>{
 }
 
 
+
 export const updateBidStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   try {
-    const bid = await Bid.findById(id);
+    const bid = await Bid.findById(id).populate('postId');
     if (!bid) return res.status(404).json({ message: 'Bid not found' });
 
+    const wasAlreadyCompleted = bid.status === 'completed';
     bid.status = status;
     await bid.save();
 
+    if (status === 'completed' && !wasAlreadyCompleted) {
+      await creditWallet(
+        bid.chefId,
+        bid.bidAmount,
+        `Earnings from the  ${bid.postId?.eventName} order on ${bid.postId?.date}`
+      );
+    }
+
     res.status(200).json(bid);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating bid status:', err); 
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
-
 
 export const getBidById = async (req, res) => {
   try {

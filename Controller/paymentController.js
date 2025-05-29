@@ -1,6 +1,6 @@
 
 
-import { createPayment, verifyPayment } from '../Service/paymentService.js';
+import { createPayment, fetchPayment, verifyPayment } from '../Service/paymentService.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const handleCreatePayment = asyncHandler(async (req, res) => {
@@ -43,5 +43,16 @@ export const verifyPaymentController = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+
+export const getPaymentController = async (req, res) => {
+  try {
+    const data = await fetchPayment();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("fetch error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
