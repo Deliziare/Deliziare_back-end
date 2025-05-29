@@ -25,7 +25,8 @@ export const createPost = async (req, res) => {
       district,
       quantity,
       menu,
-      description
+      description,
+      
     });
 
     await newPost.save();
