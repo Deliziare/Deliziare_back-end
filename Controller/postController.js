@@ -1,6 +1,12 @@
 import Post from "../Models/postModel.js";
+import User from "../Models/userModel.js";
+import Notification from "../Models/NotificationModel.js";
+import Chef from "../Models/chefModel.js";
+
+import { getIO, getOnlineUsers } from "../socket.js";
 
 
+// postController.js
 export const createPost = async (req, res) => {
   try {
     const {
@@ -15,7 +21,7 @@ export const createPost = async (req, res) => {
     } = req.body;
 
     const userId = req.user.id;
-   
+
     const newPost = new Post({
       userId,
       eventName,
@@ -30,12 +36,58 @@ export const createPost = async (req, res) => {
 
     await newPost.save();
 
-    res.status(201).json({ message: 'Post created successfully', post: newPost });
+    // Find chefs in the same district
+    const chefs = await User.find({ role: "chef" });
+    const chefIds = chefs.map(chef => chef._id);
+
+    const matchingChefProfiles = await Chef.find({
+      userId: { $in: chefIds },
+      district: { $regex: new RegExp(`^${district}$`, "i") }
+    });
+
+    const filteredChefUsers = chefs.filter(chef =>
+      matchingChefProfiles.some(profile => profile.userId.toString() === chef._id.toString())
+    );
+
+    // Create and send notifications
+    const io = getIO();
+    const onlineUsers = getOnlineUsers();
+    
+    console.log("Current online users:", [...onlineUsers.entries()]);
+
+    for (const chef of filteredChefUsers) {
+      const chefId = chef._id.toString();
+      
+      const notification = await Notification.create({
+        recipient: chefId,
+        sender: userId,
+        message: `New post available in ${district}: ${eventName}`,
+        postId: newPost._id
+      });
+
+      const chefSockets = onlineUsers.get(chefId);
+      
+      if (chefSockets) {
+        console.log(`Sending to chef ${chefId} on sockets:`, [...chefSockets]);
+        io.to([...chefSockets]).emit("new_notification", {
+          ...notification.toObject(),
+          // Ensure dates are strings
+          createdAt: notification.createdAt.toISOString(),
+          updatedAt: notification.updatedAt.toISOString()
+        });
+      } else {
+        console.log(`Chef ${chefId} is offline`);
+      }
+    }
+
+    res.status(201).json({ message: 'Post created', post: newPost });
   } catch (error) {
     console.error('Error creating post:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
 
 
 export const viewPost = async (req,res) =>{
