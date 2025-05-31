@@ -1,10 +1,11 @@
 import Bid from '../Models/bidModel.js'
+import Post from '../Models/postModel.js';
 
 export const createBid = async ({ postId, chefId, bidAmount ,description}) => {
   const existingBid = await Bid.findOne({ postId, chefId });
-  if (existingBid) {
-    throw new Error('You have already placed a bid for this post.');
-  }
+  // if (existingBid) {
+  //   throw new Error('You have already placed a bid for this post.');
+  // }
 
   const newBid = new Bid({ postId, chefId, bidAmount,description });
   const savedBid = await newBid.save();

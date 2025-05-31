@@ -37,22 +37,7 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
       return res.status(result.status || 400).json({ message: result.message });
     }
 
-    // Generate tokens after successful registration
-    const user = result.user;
-    // const accessToken = generateAccessToken(user);
-    // const refreshToken = generateRefreshToken(user);
-    //sendTokensAsCookies(res, accessToken, refreshToken);
-
-    res.status(200).json({
-      message: 'OTP verified and user registered successfully.',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      }
-    });
+    res.status(200).json({ message: 'OTP verified and user registered successfully.' });
   } catch (error) {
     console.error('Error in verifyOtpController:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -93,6 +78,7 @@ export const loginUser = asyncHandler(async (req, res) => {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      isProfileCompleted: user.isProfileCompleted,
     }
   });
 });
