@@ -8,4 +8,5 @@ const router = express.Router();
 router.post('/create',verifyToken,handleCreatePayment)
 router.post('/verify',verifyToken,verifyPaymentController)
 router.get('/getpayment',verifyToken,verifyAdmin,getPaymentController)
+router.get('/fetchPayment',verifyToken,getPaymentController)
 export default router;
