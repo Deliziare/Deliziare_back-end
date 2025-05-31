@@ -16,7 +16,7 @@ import notificationRoutes from './Routes/notificationRoutes.js'
 import http from 'http'
 import { initSocket } from './socket.js';
 
-
+import profileRoutes from './Routes/profileRoutes.js'
 import uploadRoutes from './Routes/fileUploadRoutes.js'
 import paymentRoutes from './Routes/paymentRoutes.js'
 import walletRoutes from './Routes/walletRoutes.js'
@@ -53,7 +53,7 @@ app.use('/api/notifications',notificationRoutes)
 app.use('/api/certificates',uploadRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/wallet',walletRoutes)
-
+app.use('/api/profile',profileRoutes)
 app.use(errorHandler)
 
 initSocket(server, process.env.CLIENT_URL);
