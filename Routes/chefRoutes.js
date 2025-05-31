@@ -1,5 +1,5 @@
 import express from 'express'
-import {  getLoggedInChef, getPostsForChefDistrict, updateChefProfile, viewPostDetail } from '../Controller/chefController.js'
+import {   getLoggedInChef, getPostsForChefDistrict, updateChefProfile, viewPostDetail } from '../Controller/chefController.js'
 import { verifyToken } from '../middleware/verifyToken.js'
 import Post from '../Models/postModel.js'
 import { createPost, deletePost, getAllPosts, getMyChefPosts, updatePost } from '../Controller/chefPostController.js'

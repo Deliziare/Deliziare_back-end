@@ -1,4 +1,4 @@
-import { getChefByUserId, updateChefProfileService } from "../Service/chefService.js";
+import {  getChefByUserId, updateChefProfileService } from "../Service/chefService.js";
 import Post from "../Models/postModel.js";
 import Chef from "../Models/chefModel.js";
 
@@ -107,3 +107,6 @@ export const viewPostDetail=async (req, res) => {
   }
 
 }
+
+
+

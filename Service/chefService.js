@@ -74,3 +74,6 @@ export const updateChefProfileService = async (chefId, data) => {
 
   return updatedChef;
 };
+
+
+
