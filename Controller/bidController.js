@@ -85,7 +85,7 @@ export const AcceptBid = async (req, res) => {
     );
 
 
-    await Posts.updateOne({ _id: postId }, { $set: { status: "accepted" } });
+    await Post.updateOne({ _id: postId }, { $set: { status: "accepted" } });
 
    
     const notification = await createNotificationService({
