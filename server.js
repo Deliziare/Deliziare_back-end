@@ -38,6 +38,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/userclient',userClient)
 app.use('/api/bids',bidRoutes)
 app.use('/api/certificates',uploadRoutes)
+app.use('/api/deliveryBoy',uploadRoutes)
 app.use(errorHandler)
 
 app.listen(5000, () => {
