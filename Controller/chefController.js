@@ -53,7 +53,7 @@ export const updateChefProfile = async (req, res) => {
 // };
 
 
-const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+export const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
   const toRad = (value) => (value * Math.PI) / 180;
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
