@@ -22,11 +22,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    savedPost:[
+    hasPassword: { type: Boolean, default: false },
+    savedPost: [
       {
-        type:mongoose.Schema.Types.ObjectId,ref:'ChefPost'
-      }
-    ]
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ChefPost",
+      },
+    ],
   },
   { timestamps: true }
 );

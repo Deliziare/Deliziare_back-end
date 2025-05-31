@@ -10,6 +10,17 @@ export const fetchAllUsers = async () => {
 };
 
 
+export const fetchDeliveryBoy = async () => {
+  try {
+    const users = await User.find({role: 'deliveryBoy'}, '-__v');
+    return users;
+  } catch (error) {
+    throw new Error('Failed to fetch users');
+  }
+};
+
+
+
 
 export const updateUserBlockStatus = async (userId, isBlock) => {
   if (typeof isBlock !== 'boolean') {

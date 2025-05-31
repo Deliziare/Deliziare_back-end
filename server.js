@@ -11,14 +11,24 @@ import userClient from './Routes/userClientRoute.js'
 import cookieParser from 'cookie-parser';
 import errorHandler from './middleware/errorHandler.js';
 import bidRoutes from './Routes/bidRoutes.js'
+
+import notificationRoutes from './Routes/notificationRoutes.js'
+import http from 'http'
+import { initSocket } from './socket.js';
+
+import profileRoutes from './Routes/profileRoutes.js'
 import uploadRoutes from './Routes/fileUploadRoutes.js'
+import paymentRoutes from './Routes/paymentRoutes.js'
+import walletRoutes from './Routes/walletRoutes.js'
+
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(express.json());
-app.use(cookieParser());
+
 
 connectDB();
 const corsOptions = {
@@ -37,10 +47,18 @@ app.use('/api/chefs',chefRoutes)
 app.use('/api/posts', postRoutes);
 app.use('/api/userclient',userClient)
 app.use('/api/bids',bidRoutes)
+
+app.use('/api/notifications',notificationRoutes)
+
 app.use('/api/certificates',uploadRoutes)
-app.use('/api/deliveryBoy',uploadRoutes)
+// app.use('/api/deliveryBoy',uploadRoutes)
+app.use('/api/payment',paymentRoutes)
+app.use('/api/wallet',walletRoutes)
+app.use('/api/profile',profileRoutes)
 app.use(errorHandler)
 
-app.listen(5000, () => {
+initSocket(server, process.env.CLIENT_URL);
+
+server.listen(5000, () => {
   console.log('Server running on port 5000');
 });

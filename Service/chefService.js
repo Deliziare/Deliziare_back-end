@@ -31,6 +31,7 @@ export const getChefByUserId = async (userId) => {
 
 export const updateChefProfileService = async (chefId, data) => {
   const {
+    name,
     bio,
     specialize,
     qualifications,
@@ -46,6 +47,7 @@ export const updateChefProfileService = async (chefId, data) => {
   const updatedChef = await Chef.findOneAndUpdate(
     { userId: chefId },
     {
+    name,
       bio,
       specialize,
       qualifications,
@@ -58,16 +60,20 @@ export const updateChefProfileService = async (chefId, data) => {
         facebook,
         linkedin,
       },
-        $addToSet: { certificate: { $each: certificate|| [] } }, 
+        certificate,
     },
     { new: true, upsert: true } 
   );
 
    await User.findByIdAndUpdate(
     chefId, 
-    { isProfileCompleted: true },
+    { isProfileCompleted: true ,
+      name},
     { new: true }
   );
 
   return updatedChef;
 };
+
+
+

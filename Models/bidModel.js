@@ -4,11 +4,16 @@ const bidSchema = new mongoose.Schema({
     postId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
     chefId:{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     bidAmount:{type:Number,required:true},
-      status: {
+    status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    enum: ['pending', 'accepted', 'rejected','completed'],
     default: 'pending'
-  },
+    },
+    readByUser: {
+      type: Boolean,
+      default: false,
+    },
+  description:{type:String}
     }, { timestamps: true });
   
   const Bid = mongoose.model('Bid', bidSchema);

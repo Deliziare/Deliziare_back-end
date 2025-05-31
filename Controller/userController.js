@@ -7,7 +7,7 @@ import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 import { sendTokensAsCookies } from '../utils/tokenHandler.js';
-
+//import CustomError from '../utils/CustomError.js';
 
 
 export const sendOtpController = async (req, res) => {
@@ -46,90 +46,95 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
 });
 
 
-  export const loginUser = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-  
-   
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-  
-    
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-  
-   
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-   const accessToken = generateAccessToken(user);
+
+  // userController.js
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  // Only generate tokens after successful authentication
+  const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-  sendTokensAsCookies(res,accessToken,refreshToken)
+  
+  sendTokensAsCookies(res, accessToken, refreshToken);
 
-   
-    res.status(200).json({
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-      
-    });
+  res.status(200).json({
+    message: 'Login successful',
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isProfileCompleted: user.isProfileCompleted,
+    }
   });
+});
 
 
-
+  // userController.js
   export const refreshToken = asyncHandler(async (req, res) => {
+    // Only check refresh token when actually trying to refresh
     const { refreshToken } = req.cookies;
-    if (!refreshToken) throw new CustomError("Refresh token missing", 401);
+    
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
   
-    const { newAccessToken } = await refreshAccessTokenService(refreshToken);
+    try {
+      const { newAccessToken } = await refreshAccessTokenService(refreshToken);
+      const isProd = process.env.NODE_ENV === 'production';
   
-    const isProd = process.env.NODE_ENV === 'production';
-  
-    res
-    .cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "None" : "Lax",
-      maxAge: 15 * 60 * 1000,
-      path:'/'
-    })
-    .status(200)
-    .json({
-      status: STATUS.SUCCESS,
-      message: "Access token refreshed",
-      
-    });
-  
+      res
+        .cookie("accessToken", newAccessToken, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: isProd ? "None" : "Lax",
+          maxAge: 50 * 60 * 1000, // 15 minutes
+          path: '/'
+        })
+        .status(200)
+        .json({ message: "Access token refreshed" });
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      return res.status(403).json({ message: "Session expired. Please login again." });
+    }
   });
-
-
 
 
 
   export const logoutUser = asyncHandler(async (req, res) => {
-  res.clearCookie('accessToken', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-    path: '/'
-  });
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      path: '/',
+    });
 
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      path: '/', 
+    });
 
   res.status(200).json({ message: 'Logged out successfully' });
 });
+
+
   export const getCurrentUser = asyncHandler(async (req, res) => {
   const token = req.cookies.accessToken;
   if (!token) return res.status(401).json({ message: 'Not authenticated' });
@@ -254,21 +259,50 @@ export const resendOtpController = asyncHandler(async (req, res) => {
 
 
 export const checkIfGoogleUser = asyncHandler(async (req, res) => {
-  const { email} = req.body;
-  if (!email ) {
-    return res.status(400).json({ success: false, message: 'Email and role are required' });
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email is required' });
   }
 
   const user = await User.findOne({ email });
+
   if (!user) {
     return res.status(404).json({ success: false, message: 'User not found' });
   }
 
-  return res.status(200).json({ 
-    success: true, 
+  return res.status(200).json({
+    success: true,
     isGoogleUser: user.isGoogleUser || false,
-    role: user.role || 'host' 
+    role: user.role || 'host',
   });
-  
 });
+
+
+
+export const setPassword = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    return res.status(400).json({ message: 'Password is required.' });
+  }
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+
+  if (!user.isGoogleUser) {
+    return res.status(400).json({ message: 'Password already exists. Use login instead.' });
+  }
+
+  
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(newPassword, salt);
+  user.hasPassword = true;
+
+  await user.save();
+
+  return res.status(200).json({ message: 'Password set successfully.' });
+});
+
 

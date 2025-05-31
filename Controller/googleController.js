@@ -32,23 +32,25 @@ export const googleLogin = asyncHandler(async (req, res) => {
     }
 
     if (!user) {
-      // Create user
+     
       user = await User.create({
         name,
         email,
         role: userRole,
         profileImage: picture,
-        isGoogleUser: true
+        isGoogleUser: true,
+        hasPassword:false
       });
 
-      // Create chef profile if role is chef
+      
       if (userRole === 'chef') {
         await Chef.create({
           userId: user._id,
-          phone:'Unknown',
-          location: { lat: 0, lng: 0 }, // Default location
-          district: 'Unknown', // Default district
-          experience: 'Not specified' // Default experience
+          phone:'',
+          location: { lat: 0, lng: 0 }, 
+          district: '', 
+          experience: 'Not specified' ,
+          certificate:''
         });
       }
 
@@ -56,7 +58,8 @@ export const googleLogin = asyncHandler(async (req, res) => {
         await DeliveryBoy.create({
           userId: user._id,
           phone:'Unknown',
-          
+          IDProof:'',
+          license:''
         });
       }
     }
@@ -74,7 +77,8 @@ export const googleLogin = asyncHandler(async (req, res) => {
         email: user.email,
         role: user.role,
         profilePic: user.profileImage,
-        isGoogleUser: user.isGoogleUser
+        isGoogleUser: user.isGoogleUser,
+        hasPassword:user.hasPassword
       },
     });
 
