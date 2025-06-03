@@ -1,3 +1,5 @@
+import Chef from "../Models/chefModel.js";
+import ChefPost from "../Models/chefPostModel.js";
 import User from "../Models/userModel.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import { updateUserProfileValidation } from "../validation/updateUserProfileValidation.js";
@@ -54,6 +56,15 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
+
+export const getAllChefs=async(req,res)=>{
+  try{
+    const chefs=await Chef.find().populate('userId','name email');
+    res.status(200).json(chefs)
+  }catch(error){
+    res.status(500).json({message:'Failed to fetch chefs',error})
+  }
+}
 export const uploadProfileImage = async (req, res) => {
   try {
  
@@ -77,3 +88,36 @@ export const uploadProfileImage = async (req, res) => {
     res.status(500).json({ error: 'Image upload failed' });
   }
 };
+
+//==================================================SavedJob=========================================
+export const savedPost=async(req,res)=>{
+  const userId=req.user.id
+  const postId=req.params.id 
+
+  try{
+    if(!mongoose.Types.isValid(postId)){
+      return res 
+      .status(400).json({success:false,message:'Invalid post'})
+    }
+    const post=await ChefPost.findById(postId)
+    if(!post){
+      return res 
+      .status(400)
+      .json({success:false,message:'Post not found'})
+    }
+    const user=await User.findById(userId)
+    const alreadySaved=user.savedPost?.some(id=>id.toString()===postId.toString())
+    if(alreadySaved){
+      return res 
+      .status(200)
+      .json({success:true,message:'Job already saved'})
+    }
+    user.savedPost.push(postId)
+    await user.save()
+    return res 
+    .status(200).json({success:true,message:'Job saved successfully'})
+  }catch(err){
+    return res 
+    .status(500).json({success:false,message:'Internal server error'})
+  }
+}

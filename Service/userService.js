@@ -1,3 +1,4 @@
+
 import User from '../Models/userModel.js';
 import { generateOTP } from '../utils/otp.js';
 import { saveOTP } from '../utils/otpStore.js';
@@ -56,14 +57,18 @@ export const verifyOtpService = async (req) => {
     return { success: false, message: 'Missing registration fields' };
   }
 
+
   const existingUser = await User.findOne({ email });
+
   if (existingUser) {
     return { success: false, status: 409, message: 'User already registered with this email' };
   }
 
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = new User({ name, email, phone, password: hashedPassword, role });
   await newUser.save();
+
 
   
   if (role === 'chef') {
@@ -135,14 +140,16 @@ if (typeof specializations === 'string') {
 };
 
 
+
 export const isEmailRegistered = async (email) => {
   if (!email) {
-    throw new Error('Email is required');
+    throw new Error("Email is required");
   }
 
   const existingUser = await User.findOne({ email });
   return !!existingUser;
 };
+
 
 export const refreshAccessTokenService = async (refreshToken) => {
   if (!refreshToken) {
@@ -266,4 +273,5 @@ export const resendOtpService = async (email) => {
 
   return { success: true, message: 'OTP resent successfully' };
 };
+
 

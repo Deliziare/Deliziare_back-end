@@ -1,5 +1,6 @@
 import asyncHandler from '../utils/asyncHandler.js';
-import { isEmailRegistered} from '../Service/userService.js';
+import {  isEmailRegistered } from '../Service/userService.js';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import jwt from 'jsonwebtoken';
 import { sendOtpService ,verifyOtpService,forgotPasswordService,resetPasswordService,verifyPasswordOtpService,resendOtpService,refreshAccessTokenService} from '../Service/userService.js';
 import User from '../Models/userModel.js';
@@ -172,6 +173,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 
 
+
 export const forgotPasswordController = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -255,6 +257,7 @@ export const resendOtpController = asyncHandler(async (req, res) => {
 });
 
 
+
 export const checkIfGoogleUser = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -274,6 +277,7 @@ export const checkIfGoogleUser = asyncHandler(async (req, res) => {
     role: user.role || 'host',
   });
 });
+
 
 
 export const setPassword = asyncHandler(async (req, res) => {

@@ -51,6 +51,7 @@ app.use('/api/bids',bidRoutes)
 app.use('/api/notifications',notificationRoutes)
 
 app.use('/api/certificates',uploadRoutes)
+// app.use('/api/deliveryBoy',uploadRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/wallet',walletRoutes)
 app.use('/api/profile',profileRoutes)
