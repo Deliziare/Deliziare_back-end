@@ -6,6 +6,16 @@ const deliveryBoySchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  location: {
+      lat: {
+        type: Number,
+        required: true,
+      },
+      lng: {
+        type: Number,
+        required: true,
+      },
+    },
   vehicleType: String,
   IDProof:String,
   license:String,

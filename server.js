@@ -21,7 +21,6 @@ import uploadRoutes from './Routes/fileUploadRoutes.js'
 import paymentRoutes from './Routes/paymentRoutes.js'
 import walletRoutes from './Routes/walletRoutes.js'
 
-
 dotenv.config();
 
 const app = express();
