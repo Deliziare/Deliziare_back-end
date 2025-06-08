@@ -15,7 +15,7 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-
+z
     if (user.isGoogleUser && !phone) {
       const updatedUser = await User.findByIdAndUpdate(
         userId,
