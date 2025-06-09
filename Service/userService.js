@@ -107,6 +107,13 @@ if (typeof specializations === 'string') {
   if (role === 'deliveryBoy') {
     let IDProofUrl = null;
     let licenseUrl = null;
+     const location = req.body.location || 
+                    (userData?.locationLat && userData?.locationLng 
+                      ? { 
+                          lat: parseFloat(userData.locationLat),
+                          lng: parseFloat(userData.locationLng) 
+                        }
+                      : { lat: 0, lng: 0 });
 
     if (req.files?.IDProof?.[0]) {
       const uploadResult = await uploadToCloudinary(req.files.IDProof[0].buffer);
@@ -126,6 +133,7 @@ if (typeof specializations === 'string') {
 
     const deliveryBoy = new DeliveryBoy({
       userId: newUser._id,
+      location,
       vehicleType: req.body.vehicleType || userData?.vehicleType,
       IDProof: IDProofUrl,
       license: licenseUrl,
@@ -276,3 +284,10 @@ export const resendOtpService = async (email) => {
 };
 
 
+export const findUserById=async(id)=>{
+  try {
+    return await User.findById(id)
+  } catch (error) {
+    console.log(error)
+  }
+}

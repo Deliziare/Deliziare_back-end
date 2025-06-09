@@ -42,6 +42,7 @@ export const updateChefProfileService = async (chefId, data) => {
     youtube,
     facebook,
     linkedin,
+    location
   } = data;
 
   const updatedChef = await Chef.findOneAndUpdate(
@@ -54,6 +55,7 @@ export const updateChefProfileService = async (chefId, data) => {
       experience,
       certificate,
       district,
+      location,
       socialLinks: {
         instagram,
         youtube,
