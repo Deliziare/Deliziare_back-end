@@ -283,3 +283,10 @@ export const resendOtpService = async (email) => {
 };
 
 
+export const findUserById=async(id)=>{
+  try {
+    return await User.findById(id)
+  } catch (error) {
+    console.log(error)
+  }
+}
