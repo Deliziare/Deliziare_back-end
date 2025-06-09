@@ -136,7 +136,8 @@ if (typeof specializations === 'string') {
 
   markOTPVerified(email);
 
-  return { success: true };
+  return { success: true, user: newUser };
+
 };
 
 

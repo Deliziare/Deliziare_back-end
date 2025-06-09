@@ -9,10 +9,10 @@ const bidSchema = new mongoose.Schema({
     enum: ['pending', 'accepted', 'rejected','completed'],
     default: 'pending'
     },
-    readByUser: {
+    readByPostOwner: {
       type: Boolean,
       default: false,
-    },
+    },    
   description:{type:String}
     }, { timestamps: true });
   

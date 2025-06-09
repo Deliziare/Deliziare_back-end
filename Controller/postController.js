@@ -47,7 +47,8 @@ export const createPost = async (req, res) => {
     });
 
     await newPost.save();
-
+    const io = getIO();
+    io.emit('new_post', newPost);
     
     const chefProfiles = await Chef.find({ location: { $exists: true } }).populate('userId');
 
@@ -66,7 +67,7 @@ export const createPost = async (req, res) => {
     });
 
     
-    const io = getIO();
+    //const io = getIO();
     const onlineUsers = getOnlineUsers();
 
     for (const chef of nearbyChefs) {
