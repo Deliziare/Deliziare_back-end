@@ -28,6 +28,11 @@ const postSchema = new mongoose.Schema({
     enum: ['pending', 'accepted'],
     default: 'pending'
   },
+  deliveryStatus:{
+    type:String,
+    enum:['pending','accepted','delivered'],
+    default:'pending'
+  },
   bids: [bidSchema]
 });
 

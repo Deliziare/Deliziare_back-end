@@ -5,6 +5,8 @@ import { createBid, getBidsForPost, getChefBids } from "../Service/bidService.js
 import { creditWallet } from "../Service/walletService.js";
 import { createNotificationService } from "../Service/notificationService.js";
 import { getIO, sendNotification } from "../socket.js";
+import DeliveryBoy from "../Models/deliveryboyModel.js";
+import {calculateDistanceKm} from '../Controller/chefController.js'
 
 export const createBidController = async (req, res) => {
   try {
@@ -63,6 +65,7 @@ export const getUserBidReplays=async (req,res)=>{
        res.status(500).json({ message: 'Failed to fetch ' ,error});
     }
 }
+
 
 export const AcceptBid = async (req, res) => {
   const { bidId, postId } = req.body;
@@ -136,6 +139,7 @@ export const updateBidStatus = async (req, res) => {
   }
 };
 
+//for payment to get bid data
 export const getBidById = async (req, res) => {
   try {
     const bid = await Bid.findById(req.params.bidId)
@@ -145,9 +149,7 @@ export const getBidById = async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: 'Bid not found' });
     }
-
-    
-    const chefProfile = await Chef.findOne({ userId: bid.chefId._id });
+  const chefProfile = await Chef.findOne({ userId: bid.chefId._id });
      if(chefProfile){
       bid._doc.chefProfile=chefProfile
      }
@@ -158,6 +160,7 @@ export const getBidById = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 export const markBidsAsRead = async (req, res) => {
   try {
@@ -171,3 +174,37 @@ export const markBidsAsRead = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+//order around 5 km : delivery boy
+export const getAllBid=async(req,res)=>{
+  try {
+    const userId=req.user.id;
+    const deliveryBoy=await DeliveryBoy.findOne({userId})
+    if(!deliveryBoy||!deliveryBoy.location){
+      return res.status(404).json({message:"Delivey boy location not found"})
+    }
+
+    // console.log('delivery location',deliveryBoy.location)
+    const bids=await Bid.find().populate('postId')
+    console.log(bids)
+
+    const nearbyPosts = bids.filter(bid => {
+          if (!bid.postId?.location?.lat || !bid.postId?.location?.lng) return false;
+    
+          const distance = calculateDistanceKm(
+            deliveryBoy.location.lat,
+            deliveryBoy.location.lng,
+            bid.postId?.location.lat,
+            bid.postId?.location.lng
+          );
+    
+          return distance <= 5;
+        });
+    
+  
+    res.status(200).json({message:'All bids are fetched',nearbyPosts})
+  } catch (error) {
+    console.log('bid fetch error',error)
+    res.status(500).json({message:'server error',error})
+  }
+}
