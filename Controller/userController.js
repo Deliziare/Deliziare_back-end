@@ -7,6 +7,7 @@ import User from '../Models/userModel.js';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
 import { sendTokensAsCookies } from '../utils/tokenHandler.js';
+import sendWelcomeEmail from '../utils/sendWelcomeEmail.js';
 //import CustomError from '../utils/CustomError.js';
 
 
@@ -37,7 +38,7 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
     if (!result.success) {
       return res.status(result.status || 400).json({ message: result.message });
     }
-
+    await sendWelcomeEmail({ to: result.user.email, name: result.user.name });
     res.status(200).json({ message: 'OTP verified and user registered successfully.' });
   } catch (error) {
     console.error('Error in verifyOtpController:', error);
