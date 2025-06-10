@@ -34,12 +34,33 @@ app.use(express.json());
 
 
 connectDB();
+// const corsOptions = {
+//     origin:process.env.CLIENT_URL,
+//     methods:["GET","POST","PUT","DELETE","PATCH"],
+//     credentials:true
+// }
+// app.use(cors(corsOptions))
+
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.CLIENT_URL,
+];
+
 const corsOptions = {
-    origin:process.env.CLIENT_URL,
-    methods:["GET","POST","PUT","DELETE","PATCH"],
-    credentials:true
-}
-app.use(cors(corsOptions))
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS: " + origin));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+};
+
+app.use(cors(corsOptions));
+
 
 
 app.use(cookieParser())

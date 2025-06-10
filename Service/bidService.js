@@ -7,7 +7,9 @@ export const createBid = async ({ postId, chefId, bidAmount ,description}) => {
   //   throw new Error('You have already placed a bid for this post.');
   // }
 
-  const newBid = new Bid({ postId, chefId, bidAmount,description });
+  const newBid = new Bid({ postId, chefId, bidAmount, description, readByPostOwner: false });
+
+
   const savedBid = await newBid.save();
 
  

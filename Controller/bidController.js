@@ -7,16 +7,14 @@ import { createNotificationService } from "../Service/notificationService.js";
 import { getIO, sendNotification } from "../socket.js";
 import DeliveryBoy from "../Models/deliveryboyModel.js";
 import {calculateDistanceKm} from '../Controller/chefController.js'
+import sendOTPEmail from "../utils/sendMail.js";
 
 export const createBidController = async (req, res) => {
   try {
-    console.log("req.user:", req.user); 
-    console.log("req.body:", req.body); 
-    const { postId, bidAmount,description } = req.body;
+    const { postId, bidAmount, description } = req.body;
     const chefId = req.user.id;
 
-    console.log(`Creating bid: postId=${postId}, chefId=${chefId}, amount=${bidAmount}`);
-    const bid = await createBid({ postId, chefId, bidAmount ,description});
+    const bid = await createBid({ postId, chefId, bidAmount, description });
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -24,14 +22,26 @@ export const createBidController = async (req, res) => {
     }
 
     const io = getIO();
-    io.to(post.createdBy).emit("new_bid", {
-      postId,
-      bidId: bid._id,
-      bidAmount,
-      chefId,
-      description
-    });
 
+    // // 🔔 Notify the post creator about the new bid
+    // io.to(post.userId.toString()).emit('new_bid', {
+    //   postId,
+    //   bidId: bid._id,
+    //   message: `New bid of $${bidAmount} received`
+    // });
+
+    io.to(post.userId.toString()).emit('new_bid', postId, bid._id.toString(), `New bid of $${bidAmount} received`);
+
+
+    // 🔁 Broadcast bid count update to everyone (or targeted audience if needed)
+    const bidCount = await Bid.countDocuments({ postId });
+    // io.emit('bid_updated', {
+    //   postId,
+    //   bidCount,
+    //   updatedAt: new Date()
+    // });
+
+    io.emit('bid_updated', postId, bidCount.toString(), `Bid count updated`); // Adjust message as needed
 
 
     res.status(201).json(bid);
@@ -100,6 +110,50 @@ export const AcceptBid = async (req, res) => {
 
     sendNotification(acceptedBid.chefId._id, notification);
 
+    if (acceptedBid?.chefId?.email) {
+      await sendOTPEmail({
+        to: acceptedBid.chefId.email,
+        subject: "Your Bid Has Been Accepted!",
+        html: `
+          <div style="font-family: 'Segoe UI', sans-serif; background-color: #fff8f0; padding: 20px; border-radius: 10px; color: #333;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #f0e6dd; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
+              <div style="background-color: #f27c38; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; color: white; font-size: 28px;">Bid Accepted!</h1>
+              </div>
+              <div style="padding: 30px;">
+                <p style="font-size: 18px; margin-bottom: 20px;">Hi <strong>${acceptedBid.chefId.name || 'Chef'}</strong>,</p>
+                <p style="font-size: 16px; margin-bottom: 20px;">
+                  Congratulations! Your bid for the event <strong style="color: #f27c38;">${acceptedBid.postId?.eventName}</strong> has been <strong style="color: green;">accepted</strong>.
+                </p>
+    
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 10px; border: 1px solid #f0e6dd; background-color: #fff1e6;"><strong>Event Date:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #f0e6dd;">${acceptedBid.postId?.date}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; border: 1px solid #f0e6dd; background-color: #fff1e6;"><strong>Bid Amount:</strong></td>
+                    <td style="padding: 10px; border: 1px solid #f0e6dd;">$${acceptedBid.bidAmount}</td>
+                  </tr>
+                </table>
+    
+                <p style="margin-top: 20px; font-size: 16px;">
+                  Please be ready to prepare and deliver the items on the scheduled date. Further details will follow closer to the event.
+                </p>
+    
+                <p style="font-size: 16px;">Cheers,<br><strong>— Team Deliziare</strong></p>
+              </div>
+              <div style="background-color: #f9f1eb; padding: 15px; text-align: center; font-size: 14px; color: #777;">
+                © ${new Date().getFullYear()} Deliziare. All rights reserved.
+              </div>
+            </div>
+          </div>
+        `
+      });
+    }
+    
+
+
     res.status(200).json({
       message: "Bid accepted and other bids rejected. Notification sent.",
       bid: acceptedBid,
@@ -161,19 +215,45 @@ export const getBidById = async (req, res) => {
   }
 };
 
+// export const markBidsAsRead = async (req, res) => {
+//   try {
+//     const { postId } = req.body;
+//     if (!postId) return res.status(400).json({ message: "postId is required" });
+
+//     await Bid.updateMany({ postId }, { $set: { readByPostOwner: true } });
+
+//     res.status(200).json({ message: "Bids marked as read" });
+//   } catch (error) {
+//     console.error("Error marking bids as read:", error);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
+
 
 export const markBidsAsRead = async (req, res) => {
   try {
     const { postId } = req.body;
+    const userId = req.user.id;
+
     if (!postId) return res.status(400).json({ message: "postId is required" });
 
-    await Bid.updateMany({ postId }, { $set: { readByUser: true } });
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    if (post.userId.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized: Only post owner can mark bids as read" });
+    }
+
+    await Bid.updateMany({ postId }, { $set: { readByPostOwner: true } });
     res.status(200).json({ message: "Bids marked as read" });
   } catch (error) {
     console.error("Error marking bids as read:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 //order around 5 km : delivery boy
 export const getAllBid=async(req,res)=>{
