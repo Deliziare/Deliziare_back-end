@@ -59,7 +59,8 @@ export const sendMessage = async (req, res) => {
       senderId,
       receiverId,
       content,
-      postId:validPostId
+      postId:validPostId,
+      isRead: false,
     });
 
     const savedMessage = await newMessage.save();
