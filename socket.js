@@ -30,6 +30,12 @@ export const initSocket = (httpServer, clientURL) => {
       console.log("📋 Online users now:", [...onlineUsers.entries()].map(([id, sockets]) => [id, [...sockets]]));
     });
 
+     socket.on("locationUpdate", (coords) => {
+      console.log("📍 Location received:", coords);
+
+      socket.broadcast.emit("newLocation", coords);
+    });
+
     socket.on("disconnect", () => {
       for (const [userId, sockets] of onlineUsers.entries()) {
         if (sockets.has(socket.id)) {

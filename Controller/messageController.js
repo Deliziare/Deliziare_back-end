@@ -59,7 +59,8 @@ export const sendMessage = async (req, res) => {
       senderId,
       receiverId,
       content,
-      postId:validPostId
+      postId:validPostId,
+      isRead: false,
     });
 
     const savedMessage = await newMessage.save();
@@ -144,5 +145,42 @@ export const getChatUsers = async (req, res) => {
   } catch (error) {
     console.error('Error fetching chat users:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const receiverId = req.user.id;
+    const { senderId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(receiverId) || !mongoose.Types.ObjectId.isValid(senderId)) {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+
+    await Message.updateMany(
+      {
+        senderId,
+        receiverId,
+        isRead: false,
+      },
+      { $set: { isRead: true } }
+    );
+
+    res.status(200).json({ success: true, message: 'Messages marked as read' });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getUnreadMessageCount = async (req, res) => {
+  const receiverId = req.user.id;
+  try {
+    const count = await Message.countDocuments({ receiverId, isRead: false });
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({ message: 'Failed to fetch count' });
   }
 };
