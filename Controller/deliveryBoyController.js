@@ -1,6 +1,6 @@
 import Chef from "../Models/chefModel.js"
 import Delivery from "../Models/deliveriesModel.js"
-import { deliveryBoyOrderService, deliveryService } from "../Service/deliveryBoyService.js"
+import { deliveryBoyOrderService, deliveryService, markAsPickedUpService, markDeliverdService } from "../Service/deliveryBoyService.js"
 
 
 export const deliveryAcceptController=async(req,res)=>{
@@ -67,3 +67,31 @@ export const getOrderById = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+
+
+export const markAsPickedUp = async (req, res) => {
+  try {
+    const { deliveryId } = req.params
+    const io = req.io
+
+    const result = await markAsPickedUpService(deliveryId, io)
+    res.status(200).json(result)
+  } catch (err) {
+    console.error('Pickup Error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+}
+
+
+export const markAsDelivered = async (req, res) => {
+  try {
+    const { deliveryId } = req.params
+   
+    const result = await markDeliverdService(deliveryId)
+    res.status(200).json(result)
+  } catch (err) {
+    console.error('deliver Error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+}

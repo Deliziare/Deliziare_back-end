@@ -2,6 +2,7 @@ import Bid from "../Models/bidModel.js"
 import Chef from "../Models/chefModel.js"
 import Delivery from "../Models/deliveriesModel.js"
 import Post from "../Models/postModel.js" 
+import { getIO } from "../socket.js"
 
 export const deliveryService = async (userId, bidId) => {
   
@@ -68,3 +69,54 @@ export const deliveryBoyOrderService = async (deliveryBoyId) => {
 
   return fullOrders;
 };
+
+
+
+export const markAsPickedUpService = async (deliveryId) => {
+  const delivery = await Delivery.findById(deliveryId).populate('bidId')
+
+  if (!delivery) {
+    throw new Error('Delivery not found')
+  }
+
+  delivery.status = 'picked up'
+  await delivery.save()
+
+  const bid = await Bid.findById(delivery.bidId._id)
+  const post = await Post.findById(bid?.postId)
+
+  if (post) {
+    post.deliveryStatus = 'picked up'
+    await post.save()
+  }
+
+  const io=getIO()
+  const customerId = post?.userId.toString()
+  if (customerId && io && global.userSocketMap?.has(customerId)) {
+    const socketId = global.userSocketMap.get(customerId)
+    io.to(socketId).emit('deliveryPickedUp', { deliveryId })
+  }
+
+  return { message: 'Delivery marked as picked up' }
+}
+
+
+export const markDeliverdService = async (deliveryId) => {
+  const delivery = await Delivery.findById(deliveryId).populate('bidId')
+
+  if (!delivery) {
+    throw new Error('Delivery not found')
+  }
+
+  delivery.status = 'delivered'
+  await delivery.save()
+
+  const bid = await Bid.findById(delivery.bidId._id)
+  const post = await Post.findById(bid?.postId)
+
+  if (post) {
+    post.deliveryStatus = 'delivered'
+    await post.save()
+  }
+
+}

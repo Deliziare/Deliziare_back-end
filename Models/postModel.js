@@ -30,7 +30,7 @@ const postSchema = new mongoose.Schema({
   },
   deliveryStatus:{
     type:String,
-    enum:['pending','accepted','delivered'],
+    enum:['pending','accepted','picked up','delivered'],
     default:'pending'
   },
   bids: [bidSchema]
