@@ -113,13 +113,27 @@ export const verifyPayment = async ({ razorpayOrderId, razorpayPaymentId, razorp
 
 export const fetchPayment = async () => {
   try {
-    const data = await Payment.find().populate('user').populate('bid.bidId').populate({
-    path: 'bid.bidId',
-    populate: {
-      path: 'chefId',
-      model: 'User'
-    }
-  });
+    const data = await Payment.find()
+      .populate('user')
+      .populate('bid.bidId')
+      .populate({
+        path: 'bid.bidId',
+        populate: [
+          {
+            path: 'chefId',
+            model: 'User'
+          },
+          {
+            path: 'deliveryBoyId',
+            model: 'User'
+          },
+          {
+            path: 'postId',
+            model: 'Post'
+          }
+        ]
+      });
+
     return data;
   } catch (error) {
     throw new Error('Failed to fetch Payment data');
