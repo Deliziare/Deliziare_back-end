@@ -181,8 +181,9 @@ export const updateBidStatus = async (req, res) => {
     if (status === 'completed' && !wasAlreadyCompleted) {
       await creditWallet(
         bid.chefId,
+        'chef',
         bid.bidAmount,
-        `Earnings from the  ${bid.postId?.eventName} order on ${bid.postId?.date}`
+         `Earnings from the  ${bid.postId?.eventName} order on ${bid.postId?.date}`
       );
 
       // const DeliveryBoy = (await import('../Models/deliveryboyModel.js')).default;
@@ -232,7 +233,6 @@ export const updateBidStatus = async (req, res) => {
   }
 };
 
-//for payment to get bid data
 export const getBidById = async (req, res) => {
   try {
     const bid = await Bid.findById(req.params.bidId)
@@ -295,35 +295,53 @@ export const markBidsAsRead = async (req, res) => {
 
 
 //order around 5 km : delivery boy
-export const getAllBid=async(req,res)=>{
+export const getAllBid = async (req, res) => {
   try {
-    const userId=req.user.id;
-    const deliveryBoy=await DeliveryBoy.findOne({userId})
-    if(!deliveryBoy||!deliveryBoy.location){
-      return res.status(404).json({message:"Delivey boy location not found"})
+    const userId = req.user.id;
+    const deliveryBoy = await DeliveryBoy.findOne({ userId });
+
+    if (!deliveryBoy || !deliveryBoy.location) {
+      return res.status(404).json({ message: "Delivery boy location not found" });
     }
 
-    // console.log('delivery location',deliveryBoy.location)
-    const bids=await Bid.find().populate('postId')
-    console.log(bids)
+    const bids = await Bid.find().populate('chefId').populate('postId');
 
-    const nearbyPosts = bids.filter(bid => {
-          if (!bid.postId?.location?.lat || !bid.postId?.location?.lng) return false;
+   
+    const userIds = bids.map(bid => bid.chefId?._id?.toString()).filter(Boolean);
+    const uniqueUserIds = [...new Set(userIds)];
+
     
-          const distance = calculateDistanceKm(
-            deliveryBoy.location.lat,
-            deliveryBoy.location.lng,
-            bid.postId?.location.lat,
-            bid.postId?.location.lng
-          );
+    const chefs = await Chef.find({ userId: { $in: uniqueUserIds } });
+
     
-          return distance <= 5;
-        });
+    const chefMap = new Map(chefs.map(chef => [chef.userId.toString(), chef]));
+
     
-  
-    res.status(200).json({message:'All bids are fetched',nearbyPosts})
+    const nearbyPosts = bids
+      .map(bid => {
+        const chef = chefMap.get(bid.chefId._id.toString());
+        if (!chef?.location?.lat || !chef?.location?.lng) return null;
+
+        const distance = calculateDistanceKm(
+          deliveryBoy.location.lat,
+          deliveryBoy.location.lng,
+          chef.location.lat,
+          chef.location.lng
+        );
+
+        if (distance <= 5) {
+          return {
+            ...bid._doc,
+            chefLocation: chef.location
+          };
+        }
+        return null;
+      })
+      .filter(Boolean); 
+
+    res.status(200).json({ message: 'All bids are fetched', nearbyPosts });
   } catch (error) {
-    console.log('bid fetch error',error)
-    res.status(500).json({message:'server error',error})
+    console.error('bid fetch error:', error);
+    res.status(500).json({ message: 'Server error', error });
   }
-}
+};
