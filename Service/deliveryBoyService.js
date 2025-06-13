@@ -3,6 +3,8 @@ import Chef from "../Models/chefModel.js"
 import Delivery from "../Models/deliveriesModel.js"
 import Post from "../Models/postModel.js" 
 import { getIO } from "../socket.js"
+import Payment from '../Models/paymentModel.js'
+import { creditWallet } from "./walletService.js"
 
 export const deliveryService = async (userId, bidId) => {
   
@@ -20,6 +22,10 @@ export const deliveryService = async (userId, bidId) => {
   })
 
   await newDelivery.save()
+
+  await Bid.findByIdAndUpdate(bidId, {
+    deliveryBoyId: userId,
+  });
 
  const bid=await Bid.findById(bidId)
   const post = await Post.findById(bid.postId)
@@ -102,7 +108,7 @@ export const markAsPickedUpService = async (deliveryId) => {
 
 
 export const markDeliverdService = async (deliveryId) => {
-  const delivery = await Delivery.findById(deliveryId).populate('bidId')
+  const delivery = await Delivery.findById(deliveryId).populate('bidId').populate('deliveryBoyId')
 
   if (!delivery) {
     throw new Error('Delivery not found')
@@ -113,10 +119,21 @@ export const markDeliverdService = async (deliveryId) => {
 
   const bid = await Bid.findById(delivery.bidId._id)
   const post = await Post.findById(bid?.postId)
+  const payment=await Payment.findOne({'bid.bidId': bid._id })
 
   if (post) {
     post.deliveryStatus = 'delivered'
     await post.save()
   }
+
+  const deliveryFee = payment.deliveryCharge || 27; 
+  await creditWallet(
+    delivery.deliveryBoyId._id,
+    'deliveryBoy',
+    deliveryFee,
+    `Delivery earnings for ${post?.eventName || 'an event'} on ${post?.date || ''}`
+  );
+
+  return { message: 'Delivery marked as delivered and wallet credited' };
 
 }

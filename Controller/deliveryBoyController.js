@@ -89,6 +89,7 @@ export const markAsDelivered = async (req, res) => {
     const { deliveryId } = req.params
    
     const result = await markDeliverdService(deliveryId)
+    
     res.status(200).json(result)
   } catch (err) {
     console.error('deliver Error:', err.message)

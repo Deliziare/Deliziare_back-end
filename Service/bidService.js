@@ -31,6 +31,7 @@ try {
 };
 
 export const getChefBids = async (chefId) => {
-  return await Bid.find({ chefId }).populate('postId').sort({ createdAt: -1 });
+  return await Bid.find({ chefId }).populate('postId').populate('deliveryBoyId').sort({ createdAt: -1 });
 };
 
+ 
