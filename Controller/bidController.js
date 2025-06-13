@@ -184,6 +184,45 @@ export const updateBidStatus = async (req, res) => {
         bid.bidAmount,
         `Earnings from the  ${bid.postId?.eventName} order on ${bid.postId?.date}`
       );
+
+      // const DeliveryBoy = (await import('../Models/deliveryboyModel.js')).default;
+      // const { calculateDistanceKm } = await import('../Controller/chefController.js');
+      // const { getIO, getOnlineUsers } = await import('../socket.js');
+      // const deliveryBoys = await DeliveryBoy.find();
+      // const postLocation = bid.postId.location;
+      // const io = getIO();
+      // const onlineUsers = getOnlineUsers();
+      // for (const boy of deliveryBoys) {
+      //   if (boy.location && postLocation) {
+      //     const distance = calculateDistanceKm(
+      //       boy.location.lat,
+      //       boy.location.lng,
+      //       postLocation.lat,
+      //       postLocation.lng
+      //     );
+      //     if (distance <= 5) {
+      //       await createNotificationService({
+      //         recipientId: boy.userId,
+      //         senderId: req.user._id,
+      //         postId: bid.postId._id,
+      //         message: `New order available nearby! Event: ${bid.postId.eventName}, Date: ${bid.postId.date}`,
+      //       });
+      //       const sockets = onlineUsers.get(boy.userId.toString());
+      //       if (sockets && io) {
+      //         for (const socketId of sockets) {
+      //           io.to(socketId).emit('new_notification', {
+      //             message: `New order available nearby! Event: ${bid.postId.eventName}, Date: ${bid.postId.date}`,
+      //             postId: bid.postId._id,
+      //             isRead: false,
+      //             recipient: boy.userId,
+      //             sender: req.user._id
+      //           });
+      //         }
+      //       }
+      //     }
+      //   }
+      // }
+
     }
 
     res.status(200).json(bid);
