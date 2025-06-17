@@ -21,7 +21,7 @@ import uploadRoutes from './Routes/fileUploadRoutes.js'
 import paymentRoutes from './Routes/paymentRoutes.js'
 import walletRoutes from './Routes/walletRoutes.js'
 import messageRoutes from './Routes/messageRoutes.js'
-
+import deliveryRoutes from './Routes/deliveryBoyRoutes.js'
 dotenv.config();
 
 const app = express();
@@ -55,6 +55,7 @@ app.use('/api/certificates',uploadRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/wallet',walletRoutes)
 app.use('/api/profile',profileRoutes)
+app.use('/api/delivery',deliveryRoutes)
 app.use('/api/messages', messageRoutes);
 app.use(errorHandler)
 
