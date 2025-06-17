@@ -11,7 +11,7 @@ import userClient from './Routes/userClientRoute.js'
 import cookieParser from 'cookie-parser';
 import errorHandler from './middleware/errorHandler.js';
 import bidRoutes from './Routes/bidRoutes.js'
-
+import chatPaymentRoute from './Routes/chatPymentRoute.js'
 import notificationRoutes from './Routes/notificationRoutes.js'
 import http from 'http'
 import { initSocket } from './socket.js';
@@ -81,6 +81,7 @@ app.use('/api/wallet',walletRoutes)
 app.use('/api/profile',profileRoutes)
 app.use('/api/delivery',deliveryRoutes)
 app.use('/api/messages', messageRoutes);
+app.use('/api/chatpayment', chatPaymentRoute);
 app.use(errorHandler)
 
 initSocket(server, process.env.CLIENT_URL);
