@@ -2,59 +2,8 @@
 import Bid from '../Models/bidModel.js';
 import Payment from '../Models/paymentModel.js';
 import Withdrawal from '../Models/withdrawalModel.js';
-
 import { debitWallet, getWallet } from "../Service/walletService.js";
-
-// export const getWalletByChefIdController = async (req, res) => {
-//   try {
-//     const chefId = req.user.id; 
-//     const wallet = await getWalletByChefId(chefId);
-//     res.status(200).json(wallet);
-//   } catch (error) {
-//     res.status(500).json({ message: "Error getting wallet", error: error.message });
-//   }
-// };
-
-
-// export const getWalletByDeliveryIdController = async (req, res) => {
-//   try {
-//     const deliveryBoyId = req.user.id;
-
-//     const bids = await Bid.find({ deliveryBoyId });
-//     const bidIds = bids.map(b => b._id);
-
-//     const payments = await Payment.find({ 'bid.bidId': { $in: bidIds }, status: 'completed' })
-//       .populate('bid.bidId');
-
-//     const totalEarning = payments.reduce((acc, p) => acc + p.deliveryCharge, 0);
-
-//     const withdrawals = await Withdrawal.find({
-//       userId: deliveryBoyId,
-//       role: 'deliveryBoy',
-//       status: 'approved'
-//     });
-
-//     const withdrawn = withdrawals.reduce((acc, w) => acc + w.amount, 0);
-
-//     const availableBalance = totalEarning - withdrawn;
-
-//     res.status(200).json({
-//       balance: availableBalance,
-//       totalEarning,
-//       withdrawn,
-//       transactions: payments.map(p => ({
-//         bidId: p.bid.bidId,
-//         deliveryCharge: p.deliveryCharge,
-//         total: p.total,
-//         status: p.status
-//       }))
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error calculating wallet', error: error.message });
-//   }
-// };
-
-
+import Wallet from '../Models/walletModel.js'
 
 export const requestChefWithdrawal = async (req, res) => {
   try {
@@ -147,6 +96,7 @@ export const approveWithdrawalRequest = async (req, res) => {
     const { requestId } = req.params;
 
     const withdrawal = await Withdrawal.findById(requestId);
+   const walletUser=await Wallet.findOne({userId:withdrawal.userId})
 
     if (!withdrawal) {
       return res.status(404).json({ message: 'Withdrawal request not found' });
@@ -156,7 +106,10 @@ export const approveWithdrawalRequest = async (req, res) => {
       return res.status(400).json({ message: 'Request already approved' });
     }
 
-    withdrawal.status = 'approved';
+    if(walletUser.balance>withdrawal.amount){
+      withdrawal.status = 'approved';
+    }
+
     await withdrawal.save();
 
      await debitWallet(
@@ -169,6 +122,7 @@ export const approveWithdrawalRequest = async (req, res) => {
     res.status(200).json({ message: 'Withdrawal request approved successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error approving request', error: error.message });
+    console.log(error)
   }
 };
 
@@ -203,8 +157,13 @@ export const getWalletByDeliveryIdController = async (req, res) => {
 
 export const getAllWithdrawRequest=async(req,res)=>{
   try {
-    const withdrawals=await Withdrawal.find()
-    res.status(200).json({message:'fetched all withdrawals',withdrawals})
+    const withdrawals=await Withdrawal.find().populate('userId')
+
+    const walletUser = await Wallet.findOne({ userId: withdrawals.userId });
+    if (!walletUser) {
+      return res.status(404).json({ message: 'User wallet not found' });
+    }
+    res.status(200).json({message:'fetched all withdrawals',withdrawals,walletUser})
   } catch (error) {
     console.log('withdraw error',error)
     res.status(500).json({message:'fetch error' ,
