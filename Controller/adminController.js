@@ -1,7 +1,7 @@
 import Chef from "../Models/chefModel.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { fetchAllUsers, fetchDeliveryBoy } from "../Service/adminService.js";
-import { updateUserBlockStatus } from "../Service/adminService.js";
+import Bid from'../Models/bidModel.js';
 import User from "../Models/userModel.js";
 
 export const getAllChefsForAdmin = asyncHandler(async (req, res) => {
@@ -119,3 +119,57 @@ export const toggleDeliveryBlockStatus = async (req, res) => {
   }
 };
 
+
+export const countUsersController =async(req,res)=>{
+  try {
+    const [hostCount,chefCount,deliveryCount]=await Promise.all([
+      User.countDocuments({role:'host'}),
+      User.countDocuments({role:'chef'}),
+      User.countDocuments({role:'deliveryBoy'})
+    ])
+
+    res.status(200).json({
+      message:'count got successfully',
+       host:hostCount,
+      chef:chefCount,
+      deliveryBoy:deliveryCount
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message:'server error'})
+  }
+}
+
+export const getPopularChefs = async (req, res) => {
+  try {
+    const popularChefs = await Bid.aggregate([
+      { $match: { status: "accepted" } },
+      { $group: { _id: "$chefId", acceptedBids: { $sum: 1 } } },
+      { $sort: { acceptedBids: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "chef",
+        },
+      },
+      { $unwind: "$chef" },
+      {
+        $project: {
+          _id: 0,
+          chefId: "$_id",
+          name: "$chef.name",
+          email: "$chef.email",
+          profileImage:"$chef.profileImage",
+          acceptedBids: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(popularChefs);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch popular chefs", error: err });
+  }
+};

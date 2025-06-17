@@ -20,6 +20,9 @@ import profileRoutes from './Routes/profileRoutes.js'
 import uploadRoutes from './Routes/fileUploadRoutes.js'
 import paymentRoutes from './Routes/paymentRoutes.js'
 import walletRoutes from './Routes/walletRoutes.js'
+
+import deliveryRoutes from './Routes/deliveryBoyRoutes.js'
+
 import messageRoutes from './Routes/messageRoutes.js'
 
 dotenv.config();
@@ -31,12 +34,33 @@ app.use(express.json());
 
 
 connectDB();
+// const corsOptions = {
+//     origin:process.env.CLIENT_URL,
+//     methods:["GET","POST","PUT","DELETE","PATCH"],
+//     credentials:true
+// }
+// app.use(cors(corsOptions))
+
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.CLIENT_URL,
+];
+
 const corsOptions = {
-    origin:process.env.CLIENT_URL,
-    methods:["GET","POST","PUT","DELETE","PATCH"],
-    credentials:true
-}
-app.use(cors(corsOptions))
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS: " + origin));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+};
+
+app.use(cors(corsOptions));
+
 
 
 app.use(cookieParser())
@@ -55,6 +79,7 @@ app.use('/api/certificates',uploadRoutes)
 app.use('/api/payment',paymentRoutes)
 app.use('/api/wallet',walletRoutes)
 app.use('/api/profile',profileRoutes)
+app.use('/api/delivery',deliveryRoutes)
 app.use('/api/messages', messageRoutes);
 app.use('/api/chatpayment', chatPaymentRoute);
 app.use(errorHandler)

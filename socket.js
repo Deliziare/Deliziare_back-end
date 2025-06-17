@@ -32,6 +32,12 @@ export const initSocket = (httpServer, clientURL) => {
       console.log(`✅ Registered user ${userId} with socket ${socket.id}`);
     });
 
+     socket.on("locationUpdate", (coords) => {
+      console.log("📍 Location received:", coords);
+
+      socket.broadcast.emit("newLocation", coords);
+    });
+
     socket.on("disconnect", () => {
       for (const [userId, sockets] of onlineUsers.entries()) {
         if (sockets.has(socket.id)) {
