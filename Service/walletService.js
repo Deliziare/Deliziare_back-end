@@ -32,8 +32,7 @@ import Wallet from "../Models/walletModel.js";
 
 
 export const getWallet = async (userId, role) => {
-  console.log('userId',userId)
-  console.log('role',role)
+ 
   let wallet = await Wallet.findOne({ userId, role });
   if (!wallet) {
     wallet = new Wallet({ userId, role, balance: 0, transactions: [] });

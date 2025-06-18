@@ -1,3 +1,4 @@
+import DeliveryBoy from "../Models/deliveryboyModel.js";
 import User from "../Models/userModel.js";
 
 export const fetchAllUsers = async () => {
@@ -10,10 +11,12 @@ export const fetchAllUsers = async () => {
 };
 
 
+
 export const fetchDeliveryBoy = async () => {
   try {
-    const users = await User.find({role: 'deliveryBoy'}, '-__v');
-    return users;
+    const deliveryBoy = await DeliveryBoy.find().populate('userId');
+    console.log(deliveryBoy)
+    return deliveryBoy;
   } catch (error) {
     throw new Error('Failed to fetch users');
   }
