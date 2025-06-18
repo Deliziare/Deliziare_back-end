@@ -4,10 +4,12 @@ import Chef from '../Models/chefModel.js'
 import { createBid, getBidsForPost, getChefBids } from "../Service/bidService.js";
 import { creditWallet } from "../Service/walletService.js";
 import { createNotificationService } from "../Service/notificationService.js";
-import { getIO, sendNotification } from "../socket.js";
+import { getIO, getOnlineUsers, sendNotification } from "../socket.js";
 import DeliveryBoy from "../Models/deliveryboyModel.js";
 import {calculateDistanceKm} from '../Controller/chefController.js'
 import sendOTPEmail from "../utils/sendMail.js";
+
+
 
 export const createBidController = async (req, res) => {
   try {
@@ -23,32 +25,31 @@ export const createBidController = async (req, res) => {
 
     const io = getIO();
 
-    // // 🔔 Notify the post creator about the new bid
-    // io.to(post.userId.toString()).emit('new_bid', {
-    //   postId,
-    //   bidId: bid._id,
-    //   message: `New bid of $${bidAmount} received`
-    // });
-
+    // 🔔 Notify the post creator about the new bid (via socket broadcast)
     io.to(post.userId.toString()).emit('new_bid', postId, bid._id.toString(), `New bid of $${bidAmount} received`);
 
-
-    // 🔁 Broadcast bid count update to everyone (or targeted audience if needed)
+    // 🔁 Broadcast updated bid count
     const bidCount = await Bid.countDocuments({ postId });
-    // io.emit('bid_updated', {
-    //   postId,
-    //   bidCount,
-    //   updatedAt: new Date()
-    // });
+    io.emit('bid_updated', postId, bidCount.toString(), `Bid count updated`);
 
-    io.emit('bid_updated', postId, bidCount.toString(), `Bid count updated`); // Adjust message as needed
-
+    // 📩 Send real-time notification using sendNotification()
+    const notificationData = {
+      type: "bid",
+      from: chefId,
+      to: post.userId,
+      postId,
+      bidId: bid._id,
+      message: `You received a new bid of $${bidAmount}`,
+      timestamp: new Date(),
+    };
+    sendNotification(post.userId, notificationData);
 
     res.status(201).json(bid);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 
 export const getChefBidsController = async (req, res) => {
@@ -179,20 +180,91 @@ export const updateBidStatus = async (req, res) => {
     await bid.save();
 
     if (status === 'completed' && !wasAlreadyCompleted) {
+      console.log(`Processing completed bid: ${bid._id}`);
       await creditWallet(
         bid.chefId,
         'chef',
         bid.bidAmount,
-         `Earnings from the  ${bid.postId?.eventName} order on ${bid.postId?.date}`
+        `Earnings from the ${bid.postId?.eventName} order on ${bid.postId?.date}`
       );
+
+      const deliveryBoys = await DeliveryBoy.find();
+      const postLocation = bid.postId.location;
+      console.log(`Found ${deliveryBoys.length} delivery boys`);
+      const chef = await Chef.findOne({ userId: bid.chefId });
+        if (!chef || !chef.location?.lat || !chef.location?.lng) {
+          console.warn('Chef location is missing or invalid');
+          return res.status(200).json(bid); // You may decide to continue or stop based on this
+        }
+
+
+      if (!postLocation?.lat || !postLocation?.lng) {
+        console.warn('Post location is missing or invalid:', postLocation);
+        return res.status(200).json(bid); // Proceed without notifications if location is invalid
+      }
+
+      const io = getIO();
+      const onlineUsers = getOnlineUsers();
+
+      for (const boy of deliveryBoys) {
+        if (boy.location?.lat && boy.location?.lng ) {
+          console.log(`Processing delivery boy ${boy.userId}:`, boy.location);
+          const distance = calculateDistanceKm(
+            boy.location.lat,
+            boy.location.lng,
+            chef.location.lat,
+            chef.location.lng
+          );
+          console.log(`Distance to delivery boy ${boy.userId}: ${distance} km`);
+
+          if (distance <= 5) {
+            try {
+              console.log(`Creating notification for delivery boy: ${boy.userId}`);
+              const notification = await createNotificationService({
+                recipientId: boy.userId,
+                senderId: req.user._id,
+                postId: bid.postId._id,
+                message: `New order available nearby! Event: ${bid.postId.eventName}, Date: ${bid.postId.date}`,
+              });
+              if (notification) {
+                console.log(`Notification created: ${notification._id}`);
+              } else {
+                console.warn(`Notification creation returned undefined or null for delivery boy: ${boy.userId}`);
+              }
+
+              const sockets = onlineUsers.get(boy.userId.toString());
+              console.log(`Sockets for user ${boy.userId}:`, sockets);
+              if (sockets && io) {
+                for (const socketId of sockets) {
+                  console.log(`Emitting to socket: ${socketId}`);
+                  io.to(socketId).emit('new_notification', {
+                    message: `New order available nearby! Event: ${bid.postId.eventName}, Date: ${bid.postId.date}`,
+                    postId: bid.postId._id,
+                    isRead: false,
+                    recipient: boy.userId,
+                    sender: req.user._id,
+                  });
+                }
+              }
+            } catch (notificationError) {
+              console.error(`Failed to create notification for delivery boy ${boy.userId}:`, notificationError);
+            }
+          }
+        } else {
+          console.log(`Skipping delivery boy ${boy.userId}: Invalid location data`);
+        }
+      }
     }
 
     res.status(200).json(bid);
   } catch (err) {
-    console.error('Error updating bid status:', err); 
+    console.error('Error updating bid status:', err);
     res.status(500).json({ message: err.message || 'Server error' });
   }
 };
+
+
+
 
 export const getBidById = async (req, res) => {
   try {
@@ -246,8 +318,16 @@ export const markBidsAsRead = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: Only post owner can mark bids as read" });
     }
 
+    // Update and return the updated bids
     await Bid.updateMany({ postId }, { $set: { readByPostOwner: true } });
-    res.status(200).json({ message: "Bids marked as read" });
+    
+    // Get the updated bids to return
+    const updatedBids = await Bid.find({ postId }).lean();
+    
+    res.status(200).json({ 
+      message: "Bids marked as read",
+      bids: updatedBids
+    });
   } catch (error) {
     console.error("Error marking bids as read:", error);
     res.status(500).json({ message: "Internal Server Error" });
