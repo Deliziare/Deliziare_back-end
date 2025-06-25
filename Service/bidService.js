@@ -3,9 +3,6 @@ import Post from '../Models/postModel.js';
 
 export const createBid = async ({ postId, chefId, bidAmount ,description}) => {
   const existingBid = await Bid.findOne({ postId, chefId });
-  // if (existingBid) {
-  //   throw new Error('You have already placed a bid for this post.');
-  // }
 
   const newBid = new Bid({ postId, chefId, bidAmount, description, readByPostOwner: false });
 
@@ -14,7 +11,7 @@ export const createBid = async ({ postId, chefId, bidAmount ,description}) => {
 
  
   await Post.findByIdAndUpdate(postId, {
-    $push: { bids: { chefId, amount: bidAmount ,description } }
+    $push: { bids: {bidId:savedBid._id, chefId, amount: bidAmount ,description } }
   });
 
   return savedBid;

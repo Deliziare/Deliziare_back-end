@@ -1,10 +1,49 @@
 import Bid from "../Models/bidModel.js"
 import Chef from "../Models/chefModel.js"
 import Delivery from "../Models/deliveriesModel.js"
+import User from '../Models/userModel.js'
 import Post from "../Models/postModel.js" 
 import { getIO } from "../socket.js"
 import Payment from '../Models/paymentModel.js'
 import { creditWallet } from "./walletService.js"
+import DeliveryBoy from "../Models/deliveryboyModel.js"
+
+export const getDeliveryBoyByUserId = async (userId) => {
+  console.log('delivery id',userId)
+  try {
+    let boy = await DeliveryBoy.findOne({ userId }).populate('userId', '-password');
+    
+    if (!boy) throw new Error('delivery boy profile not found');
+    return boy;
+  } catch (error) {
+    console.error('Error fetching delivery boy profile:', error);
+    throw error;
+  }
+};
+
+
+
+export const updatedDeliveryBoyProfile = async (deliveryBoyId, data) => {
+  const {
+    name,
+   location,
+   vehicleType
+  } = data;
+
+  const updatedBoy = await Chef.findOneAndUpdate(
+    { userId: deliveryBoyId },
+    {
+    name,
+    location,
+    vehicleType
+    },
+    { new: true, upsert: true } 
+  );
+
+
+  return updatedBoy;
+};
+
 
 import Notification from "../Models/NotificationModel.js"
 import User from '../Models/userModel.js';
@@ -59,6 +98,39 @@ export const deliveryService = async (userId, bidId) => {
 
   return newDelivery;
 };
+
+
+export const rejectDeliveryService = async (userId, bidId) => {
+  const bid = await Bid.findById(bidId);
+  if (!bid) {
+    throw new Error("Bid not found");
+  }
+
+  // Push userId into the rejectedByDeliveryBoys array (only if not already rejected)
+  if (!bid.rejectedByDeliveryBoys.includes(userId)) {
+    bid.rejectedByDeliveryBoys.push(userId);
+  }
+
+  // Only clear deliveryBoyId if it's the same user rejecting
+  if (bid.deliveryBoyId?.toString() === userId.toString()) {
+    bid.deliveryBoyId = null;
+  }
+
+  await bid.save();
+
+  // Optionally: update post deliveryStatus back to 'pending'
+  const post = await Post.findById(bid.postId);
+  if (post && bid.deliveryBoyId === null) {
+    post.deliveryStatus = "pending";
+    await post.save();
+  }
+
+  // Optionally: delete delivery record
+  await Delivery.findOneAndDelete({ deliveryBoyId: userId, bidId });
+
+  return { message: "Delivery rejected successfully" };
+};
+
 
 
 export const deliveryBoyOrderService = async (deliveryBoyId) => {

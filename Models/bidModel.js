@@ -14,6 +14,8 @@ const bidSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },    
+    rejectedByDeliveryBoys: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
   description:{type:String}
     }, { timestamps: true });
   

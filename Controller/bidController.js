@@ -8,6 +8,7 @@ import { getIO, getOnlineUsers, sendNotification } from "../socket.js";
 import DeliveryBoy from "../Models/deliveryboyModel.js";
 import {calculateDistanceKm} from '../Controller/chefController.js'
 import sendOTPEmail from "../utils/sendMail.js";
+import Payment from "../Models/paymentModel.js";
 
 
 
@@ -277,10 +278,21 @@ export const getBidById = async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: 'Bid not found' });
     }
-  const chefProfile = await Chef.findOne({ userId: bid.chefId._id });
-     if(chefProfile){
-      bid._doc.chefProfile=chefProfile
-     }
+
+    // Get Chef profile
+    const chefProfile = await Chef.findOne({ userId: bid.chefId._id });
+    if (chefProfile) {
+      bid._doc.chefProfile = chefProfile;
+    }
+
+    // Fetch payment for this bid to get deliveryCharge
+    const payment = await Payment.findOne({ "bid.bidId": bid._id });
+
+    if (payment) {
+      bid._doc.deliveryCharge = payment.deliveryCharge;
+    } else {
+      bid._doc.deliveryCharge = 27; 
+    }
 
     res.json(bid);
   } catch (err) {
@@ -347,19 +359,28 @@ export const getAllBid = async (req, res) => {
       return res.status(404).json({ message: "Delivery boy location not found" });
     }
 
-    const bids = await Bid.find().populate('chefId').populate('postId');
+    const bids = await Bid.find({
+  status: 'completed',
+  deliveryBoyId: null,
+  rejectedByDeliveryBoys: { $ne: userId }, 
+}).populate('chefId').populate('postId');
 
-   
     const userIds = bids.map(bid => bid.chefId?._id?.toString()).filter(Boolean);
     const uniqueUserIds = [...new Set(userIds)];
-
-    
     const chefs = await Chef.find({ userId: { $in: uniqueUserIds } });
-
-    
     const chefMap = new Map(chefs.map(chef => [chef.userId.toString(), chef]));
 
-    
+    // 1. Get all related payments in a single DB query
+    const bidIds = bids.map(bid => bid._id);
+    const payments = await Payment.find({ "bid.bidId": { $in: bidIds } });
+
+    // 2. Map bidId => deliveryCharge
+    const deliveryChargeMap = new Map();
+    payments.forEach(payment => {
+      deliveryChargeMap.set(payment.bid.bidId.toString(), payment.deliveryCharge);
+    });
+
+    // 3. Construct nearbyPosts with deliveryCharge included
     const nearbyPosts = bids
       .map(bid => {
         const chef = chefMap.get(bid.chefId._id.toString());
@@ -375,16 +396,18 @@ export const getAllBid = async (req, res) => {
         if (distance <= 30) {
           return {
             ...bid._doc,
-            chefLocation: chef.location
+            chefLocation: chef.location,
+            deliveryCharge: deliveryChargeMap.get(bid._id.toString()) || 0
           };
         }
         return null;
       })
-      .filter(Boolean); 
-
+      .filter(Boolean);
+     console.log(nearbyPosts)
     res.status(200).json({ message: 'All bids are fetched', nearbyPosts });
   } catch (error) {
     console.error('bid fetch error:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
