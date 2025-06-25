@@ -4,6 +4,9 @@ import Payment from '../Models/paymentModel.js';
 import Withdrawal from '../Models/withdrawalModel.js';
 import { debitWallet, getWallet } from "../Service/walletService.js";
 import Wallet from '../Models/walletModel.js'
+import { createNotificationService } from '../Service/notificationService.js';
+import { sendNotification } from '../socket.js';
+import User from '../Models/userModel.js';
 
 export const requestChefWithdrawal = async (req, res) => {
   try {
@@ -39,7 +42,20 @@ export const requestChefWithdrawal = async (req, res) => {
     });
 
     await newRequest.save();
-
+    const admin = await User.findOne({ role: 'admin' });
+    
+    if (admin) {
+      const notification = await createNotificationService({
+        recipientId: admin._id,
+        senderId: chefId,
+        message: `Chef requested withdrawal of ₹${amount}`,
+        postId: null,
+        type: 'chef-withdrawal',
+      });
+      console.log("Sending notification to admin:", admin._id, notification);
+      sendNotification(admin._id,notification)
+    }
+    
     res.status(201).json({ message: 'Chef withdrawal request submitted' });
   } catch (error) {
     res.status(500).json({ message: 'Error requesting withdrawal', error: error.message });
@@ -81,7 +97,19 @@ export const requestDeliveryWithdrawal = async (req, res) => {
     });
 
     await newRequest.save();
-
+    const admin = await User.findOne({ role: 'admin' });
+    
+    if (admin) {
+      const notification = await createNotificationService({
+        recipientId: admin._id,
+        senderId: deliveryBoyId,
+        message: `deliveryboy requested withdrawal of ₹${amount}`,
+        postId: null,
+        type: 'deliveryboy-withdrawal',
+      });
+      console.log("Sending notification to admin:", admin._id, notification);
+      sendNotification(admin._id,notification)
+    }
    
     res.status(201).json({ message: 'DeliveryBoy withdrawal request submitted' });
   } catch (error) {
@@ -91,12 +119,48 @@ export const requestDeliveryWithdrawal = async (req, res) => {
 
 
 
+// export const approveWithdrawalRequest = async (req, res) => {
+//   try {
+//     const { requestId } = req.params;
+
+//     const withdrawal = await Withdrawal.findById(requestId);
+//    const walletUser=await Wallet.findOne({userId:withdrawal.userId})
+
+//     if (!withdrawal) {
+//       return res.status(404).json({ message: 'Withdrawal request not found' });
+//     }
+
+//     if (withdrawal.status === 'approved') {
+//       return res.status(400).json({ message: 'Request already approved' });
+//     }
+
+//     if(walletUser.balance>withdrawal.amount){
+//       withdrawal.status = 'approved';
+//     }
+
+//     await withdrawal.save();
+
+//      await debitWallet(
+//       withdrawal.userId,
+//       withdrawal.role,
+//       withdrawal.amount,
+//       'amount withdrawal'
+//     )
+
+//     res.status(200).json({ message: 'Withdrawal request approved successfully' });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error approving request', error: error.message });
+//     console.log(error)
+//   }
+// };
+
+
 export const approveWithdrawalRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
 
     const withdrawal = await Withdrawal.findById(requestId);
-   const walletUser=await Wallet.findOne({userId:withdrawal.userId})
+    const walletUser = await Wallet.findOne({ userId: withdrawal.userId });
 
     if (!withdrawal) {
       return res.status(404).json({ message: 'Withdrawal request not found' });
@@ -106,25 +170,43 @@ export const approveWithdrawalRequest = async (req, res) => {
       return res.status(400).json({ message: 'Request already approved' });
     }
 
-    if(walletUser.balance>withdrawal.amount){
+    if (walletUser.balance > withdrawal.amount) {
       withdrawal.status = 'approved';
+      await withdrawal.save();
+
+      await debitWallet(
+        withdrawal.userId,
+        withdrawal.role,
+        withdrawal.amount,
+        'amount withdrawal'
+      );
+
+      
+      const message =
+        withdrawal.role === 'chef'
+          ? `Your withdrawal request of ₹${withdrawal.amount} has been approved`
+          : `Your delivery payout request of ₹${withdrawal.amount} has been approved`;
+
+      const notification = await createNotificationService({
+        recipientId: withdrawal.userId,
+        senderId: req.user.id, 
+        message,
+        postId: null,
+        type: 'withdrawal-approved',
+      });
+
+      sendNotification(withdrawal.userId, notification);
+
+      return res.status(200).json({ message: 'Withdrawal request approved successfully' });
+    } else {
+      return res.status(400).json({ message: 'Not enough amount in the wallet' });
     }
-
-    await withdrawal.save();
-
-     await debitWallet(
-      withdrawal.userId,
-      withdrawal.role,
-      withdrawal.amount,
-      'amount withdrawal'
-    )
-
-    res.status(200).json({ message: 'Withdrawal request approved successfully' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error approving request', error: error.message });
-    console.log(error)
   }
 };
+
 
 
 export const getWalletByChefIdController = async (req, res) => {

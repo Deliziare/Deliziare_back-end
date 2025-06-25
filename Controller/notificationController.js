@@ -27,7 +27,9 @@ export const createNotification = async (req, res) => {
         recipientId,
         senderId,
         message,
-        postId
+        postId,
+        type
+        
       });
   
      

@@ -1,12 +1,13 @@
 import Notification from "../Models/NotificationModel.js";
 import { getIO, getOnlineUsers } from "../socket.js";
 
-export const createNotificationService = async ({ recipientId, senderId, message, postId }) => {
+export const createNotificationService = async ({ recipientId, senderId, message, postId,type }) => {
   console.log('Creating notification with:', {
     recipientId,
     senderId,
     message,
-    postId
+    postId,
+    type
   });
   
   try {
@@ -15,6 +16,7 @@ export const createNotificationService = async ({ recipientId, senderId, message
       sender: senderId,
       message,
       postId,
+      type
     });
 
     const io = getIO();

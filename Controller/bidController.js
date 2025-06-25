@@ -108,6 +108,7 @@ export const AcceptBid = async (req, res) => {
       senderId: req.user._id,
       message: `Your bid for post ${acceptedBid.postId?.eventName} has been accepted.`,
       postId,
+      type:'bid_accepted'
     });
 
     sendNotification(acceptedBid.chefId._id, notification);
@@ -218,7 +219,7 @@ export const updateBidStatus = async (req, res) => {
           );
           console.log(`Distance to delivery boy ${boy.userId}: ${distance} km`);
 
-          if (distance <= 5) {
+          if (distance <= 30) {
             try {
               console.log(`Creating notification for delivery boy: ${boy.userId}`);
               const notification = await createNotificationService({
@@ -226,6 +227,7 @@ export const updateBidStatus = async (req, res) => {
                 senderId: req.user._id,
                 postId: bid.postId._id,
                 message: `New order available nearby! Event: ${bid.postId.eventName}, Date: ${bid.postId.date}`,
+                type:'deliveryboy-order'
               });
               if (notification) {
                 console.log(`Notification created: ${notification._id}`);
