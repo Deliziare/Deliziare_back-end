@@ -46,7 +46,6 @@ export const updatedDeliveryBoyProfile = async (deliveryBoyId, data) => {
 
 
 import Notification from "../Models/NotificationModel.js"
-import User from '../Models/userModel.js';
 import { sendNotification } from '../socket.js'; 
 
 export const deliveryService = async (userId, bidId) => {
