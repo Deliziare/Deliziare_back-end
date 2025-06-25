@@ -8,6 +8,7 @@ import upload from '../middleware/multer.js';
 import { checkEmailExists } from '../Controller/userController.js';
 import { googleLogin } from '../Controller/googleController.js';
 import { verifyToken } from '../middleware/verifyToken.js';
+import { verifyAdmin } from '../middleware/verifyAdmin.js';
 
 
 router.post('/send-otp',upload.any(), sendOtpController);
