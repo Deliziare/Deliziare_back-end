@@ -7,6 +7,10 @@ import { getIO } from "../socket.js"
 import Payment from '../Models/paymentModel.js'
 import { creditWallet } from "./walletService.js"
 import DeliveryBoy from "../Models/deliveryboyModel.js"
+import Notification from "../Models/NotificationModel.js"
+
+import { sendNotification } from '../socket.js'; 
+import sendOTPEmail from "../utils/sendMail.js"
 
 export const getDeliveryBoyByUserId = async (userId) => {
   console.log('delivery id',userId)
@@ -45,10 +49,7 @@ export const updatedDeliveryBoyProfile = async (deliveryBoyId, data) => {
 };
 
 
-import Notification from "../Models/NotificationModel.js"
-import User from '../Models/userModel.js';
-import { sendNotification } from '../socket.js'; 
-import sendOTPEmail from "../utils/sendMail.js"
+
 
 export const deliveryService = async (userId, bidId) => {
   const existingDelivery = await Delivery.findOne({ deliveryBoyId: userId, bidId });
