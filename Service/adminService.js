@@ -1,0 +1,42 @@
+import DeliveryBoy from "../Models/deliveryboyModel.js";
+import User from "../Models/userModel.js";
+
+export const fetchAllUsers = async () => {
+  try {
+    const users = await User.find({role: 'host'}, '-__v');
+    return users;
+  } catch (error) {
+    throw new Error('Failed to fetch users');
+  }
+};
+
+
+
+export const fetchDeliveryBoy = async () => {
+  try {
+    const deliveryBoy = await DeliveryBoy.find().populate('userId');
+    console.log(deliveryBoy)
+    return deliveryBoy;
+  } catch (error) {
+    throw new Error('Failed to fetch users');
+  }
+};
+
+
+
+
+export const updateUserBlockStatus = async (userId, isBlock) => {
+  if (typeof isBlock !== 'boolean') {
+    throw new Error("isBlock must be a boolean");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  user.isBlock = isBlock;
+  await user.save();
+
+  return user;
+};
