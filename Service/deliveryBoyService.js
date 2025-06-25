@@ -31,27 +31,34 @@ export const updatedDeliveryBoyProfile = async (deliveryBoyId, data) => {
   const {
     name,
    location,
-   vehicleType
+   vehicleType,
+   IDProof,
+   license
   } = data;
 
-  const updatedBoy = await Chef.findOneAndUpdate(
+  const updatedBoy = await DeliveryBoy.findOneAndUpdate(
     { userId: deliveryBoyId },
     {
-    name,
+  
     location,
-    vehicleType
+    vehicleType,
+    IDProof,
+    license
     },
     { new: true, upsert: true } 
   );
 
-
+if(name){
+   await User.findByIdAndUpdate(
+  deliveryBoyId,
+  {name},
+  {new:true}
+ )
+}
   return updatedBoy;
 };
 
 
-
-import Notification from "../Models/NotificationModel.js"
-import { sendNotification } from '../socket.js'; 
 
 export const deliveryService = async (userId, bidId) => {
   const existingDelivery = await Delivery.findOne({ deliveryBoyId: userId, bidId });

@@ -16,20 +16,20 @@ export const getLoggedInDeliveryBoy = async (req, res) => {
 
 export const updateboyProfile = async (req, res) => {
   try {
-    const deliveryBoyId = req.user.id; 
+    const deliveryBoyId = req.user.id;
 
     const updatedBoy = await updatedDeliveryBoyProfile(deliveryBoyId, req.body);
 
     res.status(200).json({
       success: true,
-      message: 'Delivery Boy profile updated successfully',
+      message: 'Delivery boy profile updated successfully',
       data: updatedBoy,
     });
   } catch (error) {
-    console.error('Error updating chef profile:', error);
+    console.error('Error updating delivery boy profile:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update chef profile',
+      message: 'Failed to update delivery boy profile',
       error: error.message,
     });
   }
