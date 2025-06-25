@@ -13,6 +13,7 @@ import errorHandler from './middleware/errorHandler.js';
 import bidRoutes from './Routes/bidRoutes.js'
 import chatPaymentRoute from './Routes/chatPymentRoute.js'
 import notificationRoutes from './Routes/notificationRoutes.js'
+import locationRoutes from './Routes/locationRoutes.js'
 import http from 'http'
 import { initSocket } from './socket.js';
 
@@ -58,6 +59,7 @@ app.use('/api/profile',profileRoutes)
 app.use('/api/delivery',deliveryRoutes)
 app.use('/api/messages', messageRoutes);
 app.use('/api/chatpayment', chatPaymentRoute);
+app.use('/api/location',locationRoutes)
 app.use(errorHandler)
 
 initSocket(server, process.env.CLIENT_URL);

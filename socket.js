@@ -32,11 +32,29 @@ export const initSocket = (httpServer, clientURL) => {
       console.log(`✅ Registered user ${userId} with socket ${socket.id}`);
     });
 
-     socket.on("locationUpdate", (coords) => {
-      console.log("📍 Location received:", coords);
+    socket.on("locationUpdate", ({ deliveryId, coords }) => {
+  if (!deliveryId || !coords) {
+    console.warn("⚠️ Missing deliveryId or coords in locationUpdate");
+    return;
+  }
 
-      socket.broadcast.emit("newLocation", coords);
-    });
+  console.log(`📍 Location update for delivery ${deliveryId}:`, coords);
+
+  // Send to all clients in that delivery room
+  io.to(`delivery_${deliveryId}`).emit("newLocation", {
+    deliveryId,
+    coords,
+    timestamp: new Date(),
+  });
+});
+
+
+    socket.on("join_delivery", (deliveryId) => {
+  if (deliveryId) {
+    socket.join(`delivery_${deliveryId}`);
+    console.log(`🚚 Socket ${socket.id} joined delivery room: delivery_${deliveryId}`);
+  }
+});
 
     socket.on("disconnect", () => {
       for (const [userId, sockets] of onlineUsers.entries()) {

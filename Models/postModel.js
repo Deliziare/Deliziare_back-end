@@ -6,6 +6,7 @@ const locationSchema = new mongoose.Schema({
 });
 
 const bidSchema = new mongoose.Schema({
+  bidId:{type:mongoose.Schema.Types.ObjectId,ref:'Bid'},
   chefId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   amount: { type: Number, required: true },
   message: { type: String },
