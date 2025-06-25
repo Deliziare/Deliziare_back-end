@@ -306,4 +306,12 @@ export const setPassword = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: 'Password set successfully.' });
 });
 
+export const checkCookie=(req,res)=>{
+  const token=req.cookies.refreshToken
+  if(token){
+    return res.status(200).json({message:true})
+  }else{
+    return res.status(200).json({message:false})
+  }
+}
 

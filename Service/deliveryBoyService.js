@@ -7,6 +7,10 @@ import { getIO } from "../socket.js"
 import Payment from '../Models/paymentModel.js'
 import { creditWallet } from "./walletService.js"
 import DeliveryBoy from "../Models/deliveryboyModel.js"
+import Notification from "../Models/NotificationModel.js"
+
+import { sendNotification } from '../socket.js'; 
+import sendOTPEmail from "../utils/sendMail.js"
 
 export const getDeliveryBoyByUserId = async (userId) => {
   console.log('delivery id',userId)
@@ -43,6 +47,7 @@ export const updatedDeliveryBoyProfile = async (deliveryBoyId, data) => {
 
   return updatedBoy;
 };
+
 
 
 import Notification from "../Models/NotificationModel.js"
@@ -87,7 +92,7 @@ export const deliveryService = async (userId, bidId) => {
       sender: deliveryBoy?._id,
       message: `${deliveryBoy?.name || 'Delivery Partner'} has accepted the order and is on the way to pick it up.`,
       postId: post._id,
-      
+      type:'delivery_accepted'
     });
 
     await notification.save();
@@ -193,6 +198,7 @@ export const markAsPickedUpService = async (deliveryId) => {
       message: ` Your order for "${post.eventName}" has been picked up by the deliveryboy!`,
       postId: post._id,
       isRead: false,
+      type:'order-picked'
     });
 
     // Send real-time notification
@@ -204,6 +210,7 @@ export const markAsPickedUpService = async (deliveryId) => {
       postId: post._id,
       isRead: false,
       createdAt: notification.createdAt,
+      type:notification.type
     });
   }
 
@@ -248,6 +255,7 @@ export const markDeliverdService = async (deliveryId) => {
     message: `Your order for "${post.eventName}" has been delivered!`,
     postId: post._id,
     isRead: false,
+    type:'delivered'
   });
 
   sendNotification(post.userId._id.toString(), {
@@ -258,16 +266,49 @@ export const markDeliverdService = async (deliveryId) => {
     postId: post._id,
     isRead: false,
     createdAt: userNotification.createdAt,
+    type:userNotification.type
   });
 
+  if (post.userId.email) {
+    await sendOTPEmail({
+      to: post.userId.email,
+      subject: `Your order for "${post.eventName}" has been delivered!`,
+      html: `
+  <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08); border: 1px solid #708A58;">
+  <h2 style="color: #708A58; font-size: 24px; font-weight: 700; border-bottom: 2px solid #708A58; padding-bottom: 12px; margin-bottom: 20px; letter-spacing: 0.5px;">Order Delivered</h2>
+  <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 16px;">
+    Hi <strong style="color: #708A58;">${post.userId.name}</strong>,
+  </p>
+  
+  <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 16px;">
+    Your order for <strong style="color: #708A58;">${post.eventName}</strong> scheduled on 
+    <strong style="color: #708A58;">${post.date}</strong> has been 
+    <span style="color: #708A58; font-weight: 600; background-color: rgba(112, 138, 88, 0.1); padding: 2px 6px; border-radius: 4px;">successfully delivered</span> by our delivery partner.
+  </p>
+
+  <p style="font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 16px;">
+    Thank you for choosing <strong style="color: #708A58;">Deliziare</strong>! We hope you enjoyed the experience.
+  </p>
+
+  <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #708A58;">
+    <p style="font-size: 16px; color: #333; line-height: 1.5;">Warm regards,</p>
+    <p style="font-size: 16px; font-weight: 600; color: #708A58; letter-spacing: 0.5px;">Deliziare Team</p>
+  </div>
+</div>
+`
+
+    });
+  }
+  
   // ✅ Send notification to Chef
   const chefUserId = bid.chefId;
   const chefNotification = await Notification.create({
     recipient: chefUserId,
     sender: delivery.deliveryBoyId._id,
-    message: `The order for "${post.eventName}" has been successfully delivered to the user.`,
+    message: `The order for "${post.eventName}" has been successfully delivered to ${post.userId.name}.`,
     postId: post._id,
     isRead: false,
+    type:'chef-delivered'
   });
 
   sendNotification(chefUserId.toString(), {
@@ -278,6 +319,7 @@ export const markDeliverdService = async (deliveryId) => {
     postId: post._id,
     isRead: false,
     createdAt: chefNotification.createdAt,
+    type:chefNotification.type
   });
 
   return { message: 'Delivery marked as delivered and notifications sent' };

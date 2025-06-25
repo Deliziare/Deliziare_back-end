@@ -77,7 +77,8 @@ export const createPost = async (req, res) => {
         recipient: chefId,
         sender: userId,
         message: `New event "${eventName}" is available near you.`,
-        postId: newPost._id
+        postId: newPost._id,
+        type: 'event_available'
       });
 
       const chefSockets = onlineUsers.get(chefId);
