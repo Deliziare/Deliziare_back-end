@@ -14,8 +14,9 @@ router.get('/user-posts', verifyToken, getPostsForChefDistrict);
 router.get('/user-posts/:id',verifyToken,viewPostDetail );
 router.post('/chef-post',verifyToken,upload.array('images'),createPost)
 router.get('/getPost',verifyToken,getMyChefPosts)
-router.put('/updatePost/:id',verifyToken,upload.array('images'),updatePost)
-router.delete('deletePost/:id',verifyToken,deletePost)
+router.put('/update-post/:id',verifyToken,upload.array('images'),updatePost)
+//router.delete('/deletePost/:id',verifyToken,deletePost)
 router.get('/all',getAllPosts)
+
 
 export default router
