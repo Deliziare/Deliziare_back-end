@@ -16,6 +16,6 @@ router.post('/chef-post',verifyToken,upload.array('images'),createPost)
 router.get('/getPost',verifyToken,getMyChefPosts)
 router.put('/updatePost/:id',verifyToken,upload.array('images'),updatePost)
 router.delete('deletePost/:id',verifyToken,deletePost)
-router.get('/all',verifyToken,getAllPosts)
+router.get('/all',getAllPosts)
 
 export default router
